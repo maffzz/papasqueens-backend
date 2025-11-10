@@ -1,0 +1,628 @@
+org: maferlazon
+service: papasqueens-platform
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.13
+  region: us-east-1
+  logs:
+    httpApi:
+      accessLogging: true
+    restApi:
+      accessLogging: true
+    frameworkLambda: true
+  environment:
+    AWS_REGION: us-east-1
+    EVENT_BUS: papasqueens-event-bus
+    ORDERS_TABLE: Orders
+    KITCHEN_TABLE: Kitchen
+    DELIVERY_TABLE: Delivery
+    ANALYTICS_TABLE: Analytics
+    STAFF_TABLE: Staff
+    MENU_TABLE: MenuItems
+    PRODUCTS_TABLE: Products
+    SUCURSAL_TABLE: Sucursals
+    USERS_TABLE: papasqueens-users
+    MENU_BUCKET: papasqueens-menu-images
+    PROOF_BUCKET: papasqueens-delivery-proof
+    RECEIPTS_BUCKET: papasqueens-orders-receipts
+    STAFF_BUCKET: papasqueens-staff-docs
+    ANALYTICS_BUCKET: papasqueens-analytics-exports
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:*
+        - s3:*
+        - events:PutEvents
+        - states:StartExecution
+        - logs:CreateLogGroup
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+        - logs:DescribeLogGroups
+        - logs:DescribeLogStreams
+        - cloudwatch:PutMetricData
+        - cloudwatch:GetMetricStatistics
+        - cloudwatch:ListMetrics
+      Resource: "*"
+  tracing:
+    lambda: true
+    apiGateway: true
+
+resources:
+  Resources:
+    OrdersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Orders
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id_order
+            AttributeType: S
+          - AttributeName: id_customer
+            AttributeType: S
+          - AttributeName: tenant_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id_order
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: GSI1
+            KeySchema:
+              - AttributeName: id_customer
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: TenantIndex
+            KeySchema:
+              - AttributeName: tenant_id
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    KitchenTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Kitchen
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: order_id
+            AttributeType: S
+          - AttributeName: tenant_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: order_id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: TenantIndex
+            KeySchema:
+              - AttributeName: tenant_id
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    DeliveryTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Delivery
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id_delivery
+            AttributeType: S
+          - AttributeName: id_order
+            AttributeType: S
+          - AttributeName: tenant_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id_delivery
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: OrderIndex
+            KeySchema:
+              - AttributeName: id_order
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: TenantIndex
+            KeySchema:
+              - AttributeName: tenant_id
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    AnalyticsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Analytics
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id_metric
+            AttributeType: S
+          - AttributeName: tenant_id
+            AttributeType: S
+          - AttributeName: id_order
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id_metric
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: TenantIndex
+            KeySchema:
+              - AttributeName: tenant_id
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: OrderIndex
+            KeySchema:
+              - AttributeName: id_order
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    StaffTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Staff
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id_staff
+            AttributeType: S
+          - AttributeName: tenant_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id_staff
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: TenantIndex
+            KeySchema:
+              - AttributeName: tenant_id
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    MenuItemsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: MenuItems
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id_producto
+            AttributeType: S
+          - AttributeName: tenant_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id_producto
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: TenantIndex
+            KeySchema:
+              - AttributeName: tenant_id
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    ProductsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Products
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id_producto
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id_producto
+            KeyType: HASH
+    
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: papasqueens-users
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: email
+            KeyType: HASH
+
+    # S3 BUCKETS
+    MenuImagesBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: papasqueens-menu-images
+
+    DeliveryProofBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: papasqueens-delivery-proof
+
+    OrdersReceiptsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: papasqueens-orders-receipts
+
+    StaffDocsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: papasqueens-staff-docs
+
+    AnalyticsExportsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: papasqueens-analytics-exports
+
+    SucursalTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Sucursals
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id_sucursal
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id_sucursal
+            KeyType: HASH
+
+    # EVENTBRIDGE BUS
+    EventBus:
+      Type: AWS::Events::EventBus
+      Properties:
+        Name: papasqueens-event-bus
+
+    # STEP FUNCTIONS STATE MACHINE
+    OrderWorkflowStateMachine:
+      Type: AWS::StepFunctions::StateMachine
+      Properties:
+        StateMachineName: papasqueens-order-workflow
+        RoleArn: arn:aws:iam::${aws:accountId}:role/LabRole
+        DefinitionString:
+          Fn::Sub:
+            - |
+              {
+                "Comment": "Flujo de pedidos Papas Queen's",
+                "StartAt": "ValidateOrder",
+                "States": {
+                  "ValidateOrder": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ServiceName}-${Stage}-createOrder",
+                    "Next": "SaveOrder"
+                  },
+                  "SaveOrder": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ServiceName}-${Stage}-createOrder",
+                    "Next": "WaitForPrepared"
+                  },
+                  "WaitForPrepared": {
+                    "Type": "Wait",
+                    "Seconds": 60,
+                    "Next": "AssignDelivery"
+                  },
+                  "AssignDelivery": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ServiceName}-${Stage}-assignDelivery",
+                    "Next": "WaitForDelivered"
+                  },
+                  "WaitForDelivered": {
+                    "Type": "Wait",
+                    "Seconds": 60,
+                    "Next": "UpdateAnalytics"
+                  },
+                  "UpdateAnalytics": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ServiceName}-${Stage}-collectDeliveryMetrics",
+                    "Next": "CloseOrder"
+                  },
+                  "CloseOrder": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ServiceName}-${Stage}-handleOrderDelivered",
+                    "End": true
+                  }
+                }
+              }
+            - ServiceName: ${self:service}
+              Stage: ${self:provider.stage, 'dev'}
+
+functions:
+
+  # ORDERS-SVC
+  createOrder:
+    handler: orders-svc/create_order.handler
+    events:
+      - http:
+          path: orders
+          method: post
+          cors: true
+  getOrder:
+    handler: orders-svc/get_order.handler
+    events:
+      - http:
+          path: orders/{id_order}
+          method: get
+          cors: true
+  getOrderStatus:
+    handler: orders-svc/get_order_status.handler
+    events:
+      - http:
+          path: orders/{id_order}/status
+          method: get
+          cors: true
+  getCustomerOrders:
+    handler: orders-svc/get_customer_orders.handler
+    events:
+      - http:
+          path: orders/customer/{id_customer}
+          method: get
+          cors: true
+  updateOrderStatus:
+    handler: orders-svc/update_order_status.handler
+    events:
+      - http:
+          path: orders/{id_order}/status
+          method: patch
+          cors: true
+  cancelOrder:
+    handler: orders-svc/cancel_order.handler
+    events:
+      - http:
+          path: orders/{id_order}/cancel
+          method: post
+          cors: true
+  handleOrderDelivered:
+    handler: orders-svc/handle_order_delivered.handler
+    events:
+      - eventBridge:
+          eventBus: papasqueens-event-bus
+          pattern:
+            detail-type: ["Order.Delivered"]
+  listProducts:
+    handler: orders-svc/list_products.handler
+    events:
+      - http:
+          path: menu
+          method: get
+          cors: true
+  getProductsByCategory:
+    handler: orders-svc/get_products_by_category.handler
+    events:
+      - http:
+          path: menu/category/{categoria}
+          method: get
+          cors: true
+
+  # KITCHEN-SVC
+  receiveOrder:
+    handler: kitchen-svc/receive_order.handler
+    events:
+      - eventBridge:
+          eventBus: papasqueens-event-bus
+          pattern:
+            detail-type: ["Order.Created"]
+  getKitchenQueue:
+    handler: kitchen-svc/get_kitchen_queue.handler
+    events:
+      - http:
+          path: kitchen/queue
+          method: get
+          cors: true
+  acceptOrder:
+    handler: kitchen-svc/accept_order.handler
+    events:
+      - http:
+          path: kitchen/orders/{order_id}/accept
+          method: post
+          cors: true
+  packOrder:
+    handler: kitchen-svc/pack_order.handler
+    events:
+      - http:
+          path: kitchen/orders/{order_id}/pack
+          method: post
+          cors: true
+  listMenuItems:
+    handler: kitchen-svc/list_menu_items.handler
+    events:
+      - http:
+          path: kitchen/menu
+          method: get
+          cors: true
+  addMenuItem:
+    handler: kitchen-svc/add_menu_item.handler
+    events:
+      - http:
+          path: menu
+          method: post
+          cors: true
+  updateMenuItem:
+    handler: kitchen-svc/update_menu_item.handler
+    events:
+      - http:
+          path: menu/{id_producto}
+          method: patch
+          cors: true
+  deleteMenuItem:
+    handler: kitchen-svc/delete_menu_item.handler
+    events:
+      - http:
+          path: menu/{id_producto}
+          method: delete
+          cors: true
+  manageStaff:
+    handler: kitchen-svc/manage_staff.handler
+    events:
+      - http:
+          path: staff
+          method: post
+          cors: true
+      - http:
+          path: staff/{id_staff}
+          method: patch
+          cors: true
+  listStaff:
+    handler: kitchen-svc/list_staff.handler
+    events:
+      - http:
+          path: staff
+          method: get
+          cors: true
+  syncKitchenMetrics:
+    handler: kitchen-svc/sync_kitchen_metrics.handler
+    events:
+      - eventBridge:
+          eventBus: papasqueens-event-bus
+          pattern:
+            detail-type: ["Order.Prepared"]
+
+  # DELIVERY-SVC
+  receivePreparedOrder:
+    handler: delivery-svc/receive_prepared_order.handler
+    events:
+      - eventBridge:
+          eventBus: papasqueens-event-bus
+          pattern:
+            detail-type: ["Order.Prepared"]
+  assignDelivery:
+    handler: delivery-svc/assign_delivery.handler
+    events:
+      - http:
+          path: delivery/assign
+          method: post
+          cors: true
+  updateDeliveryStatus:
+    handler: delivery-svc/update_delivery_status.handler
+    events:
+      - http:
+          path: delivery/{id_delivery}/status
+          method: patch
+          cors: true
+  handoffOrder:
+    handler: delivery-svc/handoff_order.handler
+    events:
+      - http:
+          path: delivery/orders/{id_order}/handoff
+          method: post
+          cors: true
+  confirmDelivered:
+    handler: delivery-svc/confirm_delivered.handler
+    events:
+      - http:
+          path: delivery/orders/{id_order}/delivered
+          method: post
+          cors: true
+  getDeliveryStatus:
+    handler: delivery-svc/get_delivery_status.handler
+    events:
+      - http:
+          path: delivery/{id_order}
+          method: get
+          cors: true
+  trackRider:
+    handler: delivery-svc/track_rider.handler
+    events:
+      - http:
+          path: delivery/{id_order}/track
+          method: get
+          cors: true
+  listRiders:
+    handler: delivery-svc/list_riders.handler
+    events:
+      - http:
+          path: riders
+          method: get
+          cors: true
+  updateRiderStatus:
+    handler: delivery-svc/update_rider_status.handler
+    events:
+      - http:
+          path: riders/{id_staff}/status
+          method: patch
+          cors: true
+  updateRiderLocation:
+    handler: delivery-svc/update_rider_location.handler
+    events:
+      - http:
+          path: delivery/location
+          method: post
+          cors: true
+  deliveryMetrics:
+    handler: delivery-svc/delivery_metrics.handler
+    events:
+      - eventBridge:
+          eventBus: papasqueens-event-bus
+          pattern:
+            detail-type: ["Order.Delivered"]
+
+  # ANALYTICS-SVC
+  collectOrderMetrics:
+    handler: analytics-svc/collect_order_metrics.handler
+    events:
+      - eventBridge:
+          eventBus: papasqueens-event-bus
+          pattern:
+            detail-type: ["Order.Created"]
+  collectKitchenMetrics:
+    handler: analytics-svc/collect_kitchen_metrics.handler
+    events:
+      - eventBridge:
+          eventBus: papasqueens-event-bus
+          pattern:
+            detail-type: ["Order.Prepared"]
+  collectDeliveryMetrics:
+    handler: analytics-svc/collect_delivery_metrics.handler
+    events:
+      - eventBridge:
+          eventBus: papasqueens-event-bus
+          pattern:
+            detail-type: ["Order.Delivered"]
+  collectStaffMetrics:
+    handler: analytics-svc/collect_staff_metrics.handler
+    events:
+      - eventBridge:
+          eventBus: papasqueens-event-bus
+          pattern:
+            detail-type: 
+              - "Staff.Updated"
+              - "Kitchen.MetricsUpdated"
+  getAnalyticsOrders:
+    handler: analytics-svc/get_analytics_orders.handler
+    events:
+      - http:
+          path: analytics/orders
+          method: get
+          cors: true
+  getAnalyticsEmployees:
+    handler: analytics-svc/get_analytics_employees.handler
+    events:
+      - http:
+          path: analytics/employees
+          method: get
+          cors: true
+  getAnalyticsDelivery:
+    handler: analytics-svc/get_analytics_delivery.handler
+    events:
+      - http:
+          path: analytics/delivery
+          method: get
+          cors: true
+  getDashboard:
+    handler: analytics-svc/get_dashboard.handler
+    events:
+      - http:
+          path: analytics/dashboard
+          method: get
+          cors: true
+  exportAnalyticsReport:
+    handler: analytics-svc/export_analytics_report.handler
+    events:
+      - schedule: rate(1 day)
+
+  # LOGIN
+  userLogin:
+    handler: register/login.handler
+    events:
+      - http:
+          path: login
+          method: post
+          cors: true
+    environment:
+      USERS_TABLE: ${self:provider.environment.USERS_TABLE}

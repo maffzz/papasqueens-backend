@@ -1,16 +1,6 @@
 org: maferlazon
 service: papasqueens-platform
 
-plugins:
-  - npm install --save-dev serverless-python-requirements
-
-custom:
-  pythonRequirements:
-    dockerizePip: true
-    layer: true
-    slim: true
-    strip: false
-
 provider:
   name: aws
   runtime: python3.13

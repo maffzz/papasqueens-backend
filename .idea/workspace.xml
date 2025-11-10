@@ -6,6 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="e89018de-955c-4edc-9a98-e4ca30897436" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/serverless.yml" beforeDir="false" afterPath="$PROJECT_DIR$/serverless.yml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -75,7 +76,7 @@
       <option name="presentableId" value="Default" />
       <updated>1762802062438</updated>
       <workItem from="1762802065141" duration="6652000" />
-      <workItem from="1762811362994" duration="3981000" />
+      <workItem from="1762811362994" duration="4586000" />
     </task>
     <servers />
   </component>

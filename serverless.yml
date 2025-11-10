@@ -5,6 +5,8 @@ provider:
   name: aws
   runtime: python3.13
   region: us-east-1
+  iam:
+    role: arn:aws:iam::850561899873:role/LabRole
   logs:
     frameworkLambda: true
   environment:

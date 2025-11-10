@@ -1,6 +1,5 @@
 org: maferlazon
 service: papasqueens-platform
-frameworkVersion: '3'
 
 provider:
   name: aws

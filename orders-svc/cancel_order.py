@@ -6,7 +6,6 @@ table = dynamo.Table(os.environ["ORDERS_TABLE"])
 eb = boto3.client("events")
 
 def get_user_info(event):
-    """Extrae información del usuario desde headers"""
     headers = event.get("headers", {})
     user_type = headers.get("X-User-Type") or headers.get("x-user-type")
     user_id = headers.get("X-User-Id") or headers.get("x-user-id")

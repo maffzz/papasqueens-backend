@@ -14,6 +14,14 @@ def hash_password(password):
 
 def manage_staff(event, context):
     try:
+        headers = event.get("headers", {})
+        user_type = headers.get("X-User-Type") or headers.get("x-user-type")
+        if not user_type:
+            qs = event.get("queryStringParameters") or {}
+            user_type = qs.get("user_type")
+        if user_type != "staff":
+            return {"statusCode": 403, "body": json.dumps({"error": "Forbidden"})}
+
         body = json.loads(event.get("body", "{}"))
         id_staff = body.get("id_staff", str(uuid.uuid4()))
         tenant_id = body["tenant_id"]
@@ -80,6 +88,14 @@ def manage_staff(event, context):
 
 def upload_staff_doc(event, context):
     try:
+        headers = event.get("headers", {})
+        user_type = headers.get("X-User-Type") or headers.get("x-user-type")
+        if not user_type:
+            qs = event.get("queryStringParameters") or {}
+            user_type = qs.get("user_type")
+        if user_type != "staff":
+            return {"statusCode": 403, "body": json.dumps({"error": "Forbidden"})}
+
         body = json.loads(event.get("body", "{}"))
         id_staff = body["id_staff"]
         tenant_id = body["tenant_id"]
@@ -102,6 +118,14 @@ def upload_staff_doc(event, context):
 
 def get_staff_doc(event, context):
     try:
+        headers = event.get("headers", {})
+        user_type = headers.get("X-User-Type") or headers.get("x-user-type")
+        if not user_type:
+            qs = event.get("queryStringParameters") or {}
+            user_type = qs.get("user_type")
+        if user_type != "staff":
+            return {"statusCode": 403, "body": json.dumps({"error": "Forbidden"})}
+
         id_staff = event["queryStringParameters"]["id_staff"]
         resp = table.get_item(Key={"id_staff": id_staff})
         item = resp.get("Item")

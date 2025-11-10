@@ -4,11 +4,53 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e89018de-955c-4edc-9a98-e4ca30897436" name="Changes" comment="" />
+    <list default="true" id="e89018de-955c-4edc-9a98-e4ca30897436" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analytics-svc/collect_kitchen_metrics.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics-svc/collect_kitchen_metrics.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analytics-svc/export_analytics_report.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics-svc/export_analytics_report.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analytics-svc/get_analytics_delivery.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics-svc/get_analytics_delivery.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analytics-svc/get_analytics_employees.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics-svc/get_analytics_employees.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analytics-svc/get_analytics_orders.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics-svc/get_analytics_orders.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analytics-svc/get_dashboard.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics-svc/get_dashboard.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/logger.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics-svc/logger.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/delivery-svc/assign_delivery.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/assign_delivery.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/delivery-svc/confirm_delivered.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/confirm_delivered.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/delivery-svc/delivery_metrics.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/delivery_metrics.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/delivery-svc/get_delivery_status.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/get_delivery_status.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/delivery-svc/handoff_order.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/handoff_order.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/delivery-svc/list_riders.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/list_riders.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/delivery-svc/track_rider.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/track_rider.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/delivery-svc/update_delivery_status.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/update_delivery_status.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/delivery-svc/update_rider_location.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/update_rider_location.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/delivery-svc/update_rider_status.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/update_rider_status.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kitchen-svc/accept_order.py" beforeDir="false" afterPath="$PROJECT_DIR$/kitchen-svc/accept_order.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kitchen-svc/add_menu_item.py" beforeDir="false" afterPath="$PROJECT_DIR$/kitchen-svc/add_menu_item.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kitchen-svc/delete_menu_item.py" beforeDir="false" afterPath="$PROJECT_DIR$/kitchen-svc/delete_menu_item.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kitchen-svc/get_kitchen_queue.py" beforeDir="false" afterPath="$PROJECT_DIR$/kitchen-svc/get_kitchen_queue.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kitchen-svc/list_menu_items.py" beforeDir="false" afterPath="$PROJECT_DIR$/kitchen-svc/list_menu_items.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kitchen-svc/list_staff.py" beforeDir="false" afterPath="$PROJECT_DIR$/kitchen-svc/list_staff.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kitchen-svc/manage_staff.py" beforeDir="false" afterPath="$PROJECT_DIR$/kitchen-svc/manage_staff.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kitchen-svc/pack_order.py" beforeDir="false" afterPath="$PROJECT_DIR$/kitchen-svc/pack_order.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kitchen-svc/update_menu_item.py" beforeDir="false" afterPath="$PROJECT_DIR$/kitchen-svc/update_menu_item.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/orders-svc/cancel_order.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders-svc/cancel_order.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/orders-svc/create_order.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders-svc/create_order.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/orders-svc/get_customer_orders.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders-svc/get_customer_orders.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/orders-svc/get_order.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders-svc/get_order.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/orders-svc/update_order_status.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders-svc/update_order_status.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/register/login.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders-svc/login.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/serverless.yml" beforeDir="false" afterPath="$PROJECT_DIR$/serverless.yml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -17,27 +59,36 @@
   &quot;associatedIndex&quot;: 3
 }</component>
   <component name="ProjectId" id="35IeYIYjUgknIt8zkZHyTKVspJQ" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="1" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
     <option name="sortByType" value="true" />
     <option name="sortKey" value="BY_TYPE" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/maferlazon/Desktop/py/cloud/proy_final/backend&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "/Users/maferlazon/Desktop/py/cloud/proy_final/backend",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/CORRECTO/orders-svc" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -53,7 +104,8 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1762802062438</updated>
-      <workItem from="1762802065141" duration="3790000" />
+      <workItem from="1762802065141" duration="6652000" />
+      <workItem from="1762811362994" duration="1897000" />
     </task>
     <servers />
   </component>

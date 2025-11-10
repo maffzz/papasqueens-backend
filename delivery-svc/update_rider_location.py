@@ -6,11 +6,15 @@ dynamo = boto3.resource("dynamodb")
 delivery_table = dynamo.Table(os.environ["DELIVERY_TABLE"])
 
 def handler(event, context):
-    """
-    Actualiza la última ubicación GPS del repartidor para un delivery en_camino.
-    Esta función debe ser llamada periódicamente desde la app móvil del repartidor.
-    """
     try:
+        headers = event.get("headers", {})
+        user_type = headers.get("X-User-Type") or headers.get("x-user-type")
+        if not user_type:
+            qs = event.get("queryStringParameters") or {}
+            user_type = qs.get("user_type")
+        if user_type != "staff":
+            return {"statusCode": 403, "body": json.dumps({"error": "Forbidden"})}
+
         body = json.loads(event.get("body", "{}"))
         id_order = body.get("id_order")
         lat = body.get("lat")

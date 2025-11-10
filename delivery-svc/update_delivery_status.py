@@ -7,6 +7,14 @@ eb = boto3.client("events")
 
 def handler(event, context):
     try:
+        headers = event.get("headers", {})
+        user_type = headers.get("X-User-Type") or headers.get("x-user-type")
+        if not user_type:
+            qs = event.get("queryStringParameters") or {}
+            user_type = qs.get("user_type")
+        if user_type != "staff":
+            return {"statusCode": 403, "body": json.dumps({"error": "Forbidden"})}
+
         id_delivery = event["pathParameters"]["id_delivery"]
         body = json.loads(event.get("body", "{}"))
         new_status = body["status"]

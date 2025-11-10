@@ -6,7 +6,6 @@ table = dynamo.Table(os.environ["ORDERS_TABLE"])
 users_table = dynamo.Table(os.environ.get("USERS_TABLE", "papasqueens-users"))
 
 def get_user_info(event):
-    """Extrae información del usuario desde headers o query params"""
     headers = event.get("headers", {})
     user_email = headers.get("X-User-Email") or headers.get("x-user-email")
     user_type = headers.get("X-User-Type") or headers.get("x-user-type")

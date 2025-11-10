@@ -509,7 +509,7 @@ functions:
     handler: delivery-svc/get_delivery_status.handler
     events:
       - http:
-          path: delivery/{id_order}/status
+          path: delivery/{id_delivery}
           method: get
           cors: true
   trackRider:

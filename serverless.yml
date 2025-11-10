@@ -488,21 +488,21 @@ functions:
     handler: delivery-svc/update_delivery_status.handler
     events:
       - http:
-          path: delivery/{id_delivery}/update
+          path: delivery/{id_delivery}/status
           method: patch
           cors: true
   handoffOrder:
     handler: delivery-svc/handoff_order.handler
     events:
       - http:
-          path: delivery/orders/{id_order}/handoff
+          path: delivery/{id_delivery}/handoff
           method: post
           cors: true
   confirmDelivered:
     handler: delivery-svc/confirm_delivered.handler
     events:
       - http:
-          path: delivery/orders/{id_order}/delivered
+          path: delivery/{id_delivery}/delivered
           method: post
           cors: true
   getDeliveryStatus:

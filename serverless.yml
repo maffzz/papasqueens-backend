@@ -488,7 +488,7 @@ functions:
     handler: delivery-svc/update_delivery_status.handler
     events:
       - http:
-          path: delivery/{id_delivery}/status
+          path: delivery/{id_delivery}/update
           method: patch
           cors: true
   handoffOrder:
@@ -509,7 +509,7 @@ functions:
     handler: delivery-svc/get_delivery_status.handler
     events:
       - http:
-          path: delivery/{id_order}
+          path: delivery/{id_order}/status
           method: get
           cors: true
   trackRider:

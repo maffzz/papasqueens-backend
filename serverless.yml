@@ -10,7 +10,6 @@ provider:
   logs:
     frameworkLambda: true
   environment:
-    AWS_REGION: us-east-1
     EVENT_BUS: papasqueens-event-bus
     ORDERS_TABLE: Orders
     KITCHEN_TABLE: Kitchen

@@ -6,39 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="e89018de-955c-4edc-9a98-e4ca30897436" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analytics-svc/collect_kitchen_metrics.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics-svc/collect_kitchen_metrics.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analytics-svc/export_analytics_report.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics-svc/export_analytics_report.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analytics-svc/get_analytics_delivery.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics-svc/get_analytics_delivery.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analytics-svc/get_analytics_employees.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics-svc/get_analytics_employees.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analytics-svc/get_analytics_orders.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics-svc/get_analytics_orders.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analytics-svc/get_dashboard.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics-svc/get_dashboard.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/logger.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics-svc/logger.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/delivery-svc/assign_delivery.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/assign_delivery.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/delivery-svc/confirm_delivered.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/confirm_delivered.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/delivery-svc/delivery_metrics.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/delivery_metrics.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/delivery-svc/get_delivery_status.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/get_delivery_status.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/delivery-svc/handoff_order.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/handoff_order.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/delivery-svc/list_riders.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/list_riders.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/delivery-svc/track_rider.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/track_rider.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/delivery-svc/update_delivery_status.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/update_delivery_status.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/delivery-svc/update_rider_location.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/update_rider_location.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/delivery-svc/update_rider_status.py" beforeDir="false" afterPath="$PROJECT_DIR$/delivery-svc/update_rider_status.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kitchen-svc/accept_order.py" beforeDir="false" afterPath="$PROJECT_DIR$/kitchen-svc/accept_order.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kitchen-svc/add_menu_item.py" beforeDir="false" afterPath="$PROJECT_DIR$/kitchen-svc/add_menu_item.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kitchen-svc/delete_menu_item.py" beforeDir="false" afterPath="$PROJECT_DIR$/kitchen-svc/delete_menu_item.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kitchen-svc/get_kitchen_queue.py" beforeDir="false" afterPath="$PROJECT_DIR$/kitchen-svc/get_kitchen_queue.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kitchen-svc/list_menu_items.py" beforeDir="false" afterPath="$PROJECT_DIR$/kitchen-svc/list_menu_items.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kitchen-svc/list_staff.py" beforeDir="false" afterPath="$PROJECT_DIR$/kitchen-svc/list_staff.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kitchen-svc/manage_staff.py" beforeDir="false" afterPath="$PROJECT_DIR$/kitchen-svc/manage_staff.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kitchen-svc/pack_order.py" beforeDir="false" afterPath="$PROJECT_DIR$/kitchen-svc/pack_order.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kitchen-svc/update_menu_item.py" beforeDir="false" afterPath="$PROJECT_DIR$/kitchen-svc/update_menu_item.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/orders-svc/cancel_order.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders-svc/cancel_order.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analytics-svc/logger.py" beforeDir="false" afterPath="$PROJECT_DIR$/logger.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analytics-svc/order_assigned_consumer.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics-svc/order_assigned_consumer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/orders-svc/create_order.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders-svc/create_order.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/orders-svc/get_customer_orders.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders-svc/get_customer_orders.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/orders-svc/get_order.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders-svc/get_order.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/orders-svc/update_order_status.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders-svc/update_order_status.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/register/login.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders-svc/login.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/serverless.yml" beforeDir="false" afterPath="$PROJECT_DIR$/serverless.yml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -86,6 +56,9 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/analytics-svc" />
+      <recent name="$PROJECT_DIR$/orders-svc" />
       <recent name="$PROJECT_DIR$/CORRECTO/orders-svc" />
     </key>
   </component>
@@ -105,7 +78,7 @@
       <option name="presentableId" value="Default" />
       <updated>1762802062438</updated>
       <workItem from="1762802065141" duration="6652000" />
-      <workItem from="1762811362994" duration="1897000" />
+      <workItem from="1762811362994" duration="2551000" />
     </task>
     <servers />
   </component>

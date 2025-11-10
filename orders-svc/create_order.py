@@ -3,7 +3,7 @@ import boto3
 from botocore.exceptions import ClientError
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from common.logger import log_info, log_error
+from logger import log_info, log_error
 
 dynamo = boto3.resource("dynamodb")
 table = dynamo.Table(os.environ["ORDERS_TABLE"])

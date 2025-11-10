@@ -2,11 +2,9 @@ import json, boto3, os, datetime
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key
 
-
 dynamo = boto3.resource("dynamodb")
 analytics_table = dynamo.Table(os.environ["ANALYTICS_TABLE"])
 delivery_table = dynamo.Table(os.environ["DELIVERY_TABLE"])
-
 
 def handler(event, context):
     try:
@@ -14,7 +12,6 @@ def handler(event, context):
         id_delivery = detail["id_delivery"]
         id_staff = detail.get("id_staff")
 
-        # Fetch delivery to get order and tenant
         dresp = delivery_table.get_item(Key={"id_delivery": id_delivery})
         delivery = dresp.get("Item")
         if not delivery:
@@ -23,14 +20,12 @@ def handler(event, context):
         order_id = delivery.get("id_order")
         tenant_id = delivery.get("tenant_id", "default")
 
-        # Update analytics metric for this order with assigned staff
         aresp = analytics_table.query(
             IndexName="OrderIndex",
             KeyConditionExpression=Key("id_order").eq(order_id)
         )
         items = aresp.get("Items", [])
         if not items:
-            # If metric doesn't exist yet, create a basic one
             analytics_table.put_item(Item={
                 "id_metric": f"metric-{order_id}",
                 "id_order": order_id,

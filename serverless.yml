@@ -6,10 +6,6 @@ provider:
   runtime: python3.13
   region: us-east-1
   logs:
-    httpApi:
-      accessLogging: true
-    restApi:
-      accessLogging: true
     frameworkLambda: true
   environment:
     AWS_REGION: us-east-1
@@ -267,7 +263,7 @@ resources:
     EventBus:
       Type: AWS::Events::EventBus
       Properties:
-        Name: papasqueens-event-bus
+        Name: papasqueens-event-bus-${sls:stage}
 
     # STEP FUNCTIONS STATE MACHINE
     OrderWorkflowStateMachine:

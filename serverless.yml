@@ -1,6 +1,9 @@
 org: maferlazon
 service: papasqueens-platform
 
+plugins:
+  - npm install --save-dev serverless-python-requirements
+
 provider:
   name: aws
   runtime: python3.13

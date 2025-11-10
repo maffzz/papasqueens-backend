@@ -628,7 +628,7 @@ functions:
 
   # LOGIN
   userLogin:
-    handler: orders-svc/login.handler
+    handler: login.handler
     events:
       - http:
           path: login

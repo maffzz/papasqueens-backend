@@ -516,7 +516,7 @@ functions:
     handler: delivery-svc/track_rider.handler
     events:
       - http:
-          path: delivery/{id_order}/track
+          path: delivery/{id_delivery}/track
           method: get
           cors: true
   listRiders:

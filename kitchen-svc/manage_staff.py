@@ -1,6 +1,7 @@
 import json, boto3, os, uuid, datetime
 from botocore.exceptions import ClientError
 import base64, hashlib, hmac
+from validate import require_roles
 
 dynamo = boto3.resource("dynamodb")
 table = dynamo.Table(os.environ["STAFF_TABLE"])
@@ -15,13 +16,7 @@ def hash_password(password):
 
 def manage_staff(event, context):
     try:
-        headers = event.get("headers", {})
-        user_type = headers.get("X-User-Type") or headers.get("x-user-type")
-        if not user_type:
-            qs = event.get("queryStringParameters") or {}
-            user_type = qs.get("user_type")
-        if user_type != "staff":
-            return {"statusCode": 403, "body": json.dumps({"error": "Forbidden"})}
+        _ = require_roles(event, {"staff"})
 
         body = json.loads(event.get("body", "{}"))
         id_staff = body.get("id_staff", str(uuid.uuid4()))
@@ -89,13 +84,7 @@ def manage_staff(event, context):
 
 def upload_staff_doc(event, context):
     try:
-        headers = event.get("headers", {})
-        user_type = headers.get("X-User-Type") or headers.get("x-user-type")
-        if not user_type:
-            qs = event.get("queryStringParameters") or {}
-            user_type = qs.get("user_type")
-        if user_type != "staff":
-            return {"statusCode": 403, "body": json.dumps({"error": "Forbidden"})}
+        _ = require_roles(event, {"staff"})
 
         body = json.loads(event.get("body", "{}"))
         id_staff = body["id_staff"]
@@ -119,13 +108,7 @@ def upload_staff_doc(event, context):
 
 def get_staff_doc(event, context):
     try:
-        headers = event.get("headers", {})
-        user_type = headers.get("X-User-Type") or headers.get("x-user-type")
-        if not user_type:
-            qs = event.get("queryStringParameters") or {}
-            user_type = qs.get("user_type")
-        if user_type != "staff":
-            return {"statusCode": 403, "body": json.dumps({"error": "Forbidden"})}
+        _ = require_roles(event, {"staff"})
 
         id_staff = event["queryStringParameters"]["id_staff"]
         resp = table.get_item(Key={"id_staff": id_staff})

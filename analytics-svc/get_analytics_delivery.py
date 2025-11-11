@@ -2,19 +2,14 @@ import datetime
 import json, boto3, os, statistics
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
+from validate import require_roles
 
 dynamo = boto3.resource("dynamodb")
 delivery_table = dynamo.Table(os.environ["DELIVERY_TABLE"])
 
 def handler(event, context):
     try:
-        headers = event.get("headers", {})
-        user_type = headers.get("X-User-Type") or headers.get("x-user-type")
-        if not user_type:
-            qs = event.get("queryStringParameters") or {}
-            user_type = qs.get("user_type")
-        if user_type != "staff":
-            return {"statusCode": 403, "body": json.dumps({"error": "Forbidden"})}
+        _ = require_roles(event, {"staff"})
 
         tenant_id = event["queryStringParameters"]["tenant_id"]
         resp = delivery_table.scan(FilterExpression=Attr("tenant_id").eq(tenant_id) & Attr("status").eq("entregado"))

@@ -1,24 +1,14 @@
 import json, os, boto3, datetime
 from botocore.exceptions import ClientError
+from validate import require_roles
 
 dynamo = boto3.resource("dynamodb")
 table = dynamo.Table(os.environ["ORDERS_TABLE"])
 eb = boto3.client("events")
 
 def get_user_info(event):
-    headers = event.get("headers", {})
-    user_type = headers.get("X-User-Type") or headers.get("x-user-type")
-    user_id = headers.get("X-User-Id") or headers.get("x-user-id")
-    
-    if not user_type:
-        query_params = event.get("queryStringParameters") or {}
-        user_type = query_params.get("user_type")
-        user_id = query_params.get("user_id")
-    
-    return {
-        "type": user_type,
-        "id": user_id
-    }
+    claims = require_roles(event, {"staff"})
+    return {"type": "staff", "id": claims.get("sub")}
 
 def handler(event, context):
     order_id = event["pathParameters"]["order_id"]
@@ -29,9 +19,7 @@ def handler(event, context):
         return {"statusCode": 400, "body": json.dumps({"error": "Estado no válido"})}
 
     try:
-        user_info = get_user_info(event)
-        if user_info.get("type") != "staff":
-            return {"statusCode": 403, "body": json.dumps({"error": "Solo el personal autorizado puede actualizar el estado del pedido"})}
+        _ = require_roles(event, {"staff"})
         
         order_resp = table.get_item(Key={"id_order": order_id})
         if not order_resp.get("Item"):

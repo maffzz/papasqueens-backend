@@ -6,7 +6,6 @@ table = dynamo.Table(os.environ["KITCHEN_TABLE"])
 
 def handler(event, context):
     try:
-        # evento desde EventBridge
         detail = event.get("detail", {})
         order_id = detail["id_order"]
         tenant_id = detail["tenant_id"]

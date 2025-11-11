@@ -3,6 +3,7 @@ import boto3
 import os
 import datetime
 from botocore.exceptions import ClientError
+from validate import require_roles
 
 dynamo = boto3.resource("dynamodb")
 delivery_table = dynamo.Table(os.environ["DELIVERY_TABLE"])
@@ -10,13 +11,7 @@ eb = boto3.client("events")
 
 def handler(event, context):
     try:
-        headers = event.get("headers", {})
-        user_type = headers.get("X-User-Type") or headers.get("x-user-type")
-        if not user_type:
-            qs = event.get("queryStringParameters") or {}
-            user_type = qs.get("user_type")
-        if user_type != "staff":
-            return {"statusCode": 403, "body": json.dumps({"error": "Forbidden"})}
+        _ = require_roles(event, {"staff"})
 
         id_delivery = event["pathParameters"]["id_delivery"]
         now = datetime.datetime.utcnow().isoformat()

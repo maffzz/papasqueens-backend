@@ -27,6 +27,7 @@ provider:
     RECEIPTS_BUCKET: papasqueens-orders-receipts
     STAFF_BUCKET: papasqueens-staff-docs
     ANALYTICS_BUCKET: papasqueens-analytics-exports
+    AUTH_SECRET: ${env:AUTH_SECRET, "change-me-dev-secret"}
 
   iamRoleStatements:
     - Effect: Allow
@@ -323,6 +324,9 @@ resources:
 
 functions:
 
+  jwtAuthorizer:
+    handler: auth/authorizer.handler
+
   # ORDERS-SVC
   createOrder:
     handler: orders-svc/create_order.handler
@@ -331,6 +335,7 @@ functions:
           path: orders
           method: post
           cors: true
+          authorizer: jwtAuthorizer
   getOrder:
     handler: orders-svc/get_order.handler
     events:
@@ -338,6 +343,7 @@ functions:
           path: orders/{id_order}
           method: get
           cors: true
+          authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
   getOrderStatus:
@@ -347,6 +353,7 @@ functions:
           path: orders/{id_order}/status
           method: get
           cors: true
+          authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
   getCustomerOrders:
@@ -356,6 +363,7 @@ functions:
           path: orders/customer/{id_customer}
           method: get
           cors: true
+          authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
   updateOrderStatus:
@@ -365,6 +373,7 @@ functions:
           path: orders/{id_order}/status
           method: patch
           cors: true
+          authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
   cancelOrder:
@@ -374,6 +383,7 @@ functions:
           path: orders/{id_order}/cancel
           method: post
           cors: true
+          authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
   handleOrderDelivered:
@@ -390,6 +400,7 @@ functions:
           path: menu
           method: get
           cors: true
+          authorizer: jwtAuthorizer
   getProductsByCategory:
     handler: orders-svc/get_products_by_category.handler
     events:
@@ -397,6 +408,7 @@ functions:
           path: menu/category/{categoria}
           method: get
           cors: true
+          authorizer: jwtAuthorizer
 
   # KITCHEN-SVC
   receiveOrder:
@@ -413,6 +425,7 @@ functions:
           path: kitchen/queue
           method: get
           cors: true
+          authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
   acceptOrder:
@@ -422,6 +435,7 @@ functions:
           path: kitchen/orders/{order_id}/accept
           method: post
           cors: true
+          authorizer: jwtAuthorizer
   packOrder:
     handler: kitchen-svc/pack_order.handler
     events:
@@ -429,6 +443,7 @@ functions:
           path: kitchen/orders/{order_id}/pack
           method: post
           cors: true
+          authorizer: jwtAuthorizer
   listMenuItems:
     handler: kitchen-svc/list_menu_items.handler
     events:
@@ -436,6 +451,7 @@ functions:
           path: kitchen/menu
           method: get
           cors: true
+          authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
   addMenuItem:
@@ -445,6 +461,7 @@ functions:
           path: menu
           method: post
           cors: true
+          authorizer: jwtAuthorizer
   updateMenuItem:
     handler: kitchen-svc/update_menu_item.handler
     events:
@@ -452,6 +469,7 @@ functions:
           path: menu/{id_producto}
           method: patch
           cors: true
+          authorizer: jwtAuthorizer
   deleteMenuItem:
     handler: kitchen-svc/delete_menu_item.handler
     events:
@@ -459,6 +477,7 @@ functions:
           path: menu/{id_producto}
           method: delete
           cors: true
+          authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
   manageStaff:
@@ -468,10 +487,12 @@ functions:
           path: staff
           method: post
           cors: true
+          authorizer: jwtAuthorizer
       - http:
           path: staff/{id_staff}
           method: patch
           cors: true
+          authorizer: jwtAuthorizer
     memorySize: 1536
     timeout: 30
   listStaff:
@@ -481,6 +502,7 @@ functions:
           path: staff
           method: get
           cors: true
+          authorizer: jwtAuthorizer
   syncKitchenMetrics:
     handler: kitchen-svc/sync_kitchen_metrics.handler
     events:
@@ -504,6 +526,7 @@ functions:
           path: delivery/assign
           method: post
           cors: true
+          authorizer: jwtAuthorizer
   updateDeliveryStatus:
     handler: delivery-svc/update_delivery_status.handler
     events:
@@ -511,6 +534,7 @@ functions:
           path: delivery/{id_delivery}/status
           method: patch
           cors: true
+          authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
   handoffOrder:
@@ -520,6 +544,7 @@ functions:
           path: delivery/{id_delivery}/handoff
           method: post
           cors: true
+          authorizer: jwtAuthorizer
   confirmDelivered:
     handler: delivery-svc/confirm_delivered.handler
     events:
@@ -527,6 +552,7 @@ functions:
           path: delivery/{id_delivery}/delivered
           method: post
           cors: true
+          authorizer: jwtAuthorizer
   getDeliveryStatus:
     handler: delivery-svc/get_delivery_status.handler
     events:
@@ -534,6 +560,7 @@ functions:
           path: delivery/{id_delivery}
           method: get
           cors: true
+          authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
   trackRider:
@@ -543,6 +570,7 @@ functions:
           path: delivery/{id_delivery}/track
           method: get
           cors: true
+          authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
   listRiders:
@@ -552,6 +580,7 @@ functions:
           path: riders
           method: get
           cors: true
+          authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
   updateRiderStatus:
@@ -561,6 +590,7 @@ functions:
           path: riders/{id_staff}/status
           method: patch
           cors: true
+          authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
   updateRiderLocation:
@@ -570,6 +600,7 @@ functions:
           path: delivery/location
           method: post
           cors: true
+          authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
   deliveryMetrics:
@@ -632,6 +663,7 @@ functions:
           path: analytics/orders
           method: get
           cors: true
+          authorizer: jwtAuthorizer
   getAnalyticsEmployees:
     handler: analytics-svc/get_analytics_employees.handler
     events:
@@ -639,6 +671,7 @@ functions:
           path: analytics/employees
           method: get
           cors: true
+          authorizer: jwtAuthorizer
   getAnalyticsDelivery:
     handler: analytics-svc/get_analytics_delivery.handler
     events:
@@ -646,6 +679,7 @@ functions:
           path: analytics/delivery
           method: get
           cors: true
+          authorizer: jwtAuthorizer
   getDashboard:
     handler: analytics-svc/get_dashboard.handler
     events:
@@ -653,6 +687,7 @@ functions:
           path: analytics/dashboard
           method: get
           cors: true
+          authorizer: jwtAuthorizer
   exportAnalyticsReport:
     handler: analytics-svc/export_analytics_report.handler
     events:

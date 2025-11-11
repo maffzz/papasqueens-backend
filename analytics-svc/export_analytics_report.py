@@ -1,6 +1,7 @@
 import json, boto3, os, csv, io, datetime
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
+from validate import require_roles
 
 dynamo = boto3.resource("dynamodb")
 analytics_table = dynamo.Table(os.environ["ANALYTICS_TABLE"])
@@ -11,13 +12,7 @@ def handler(event, context):
         is_http = bool(event.get("headers")) or "httpMethod" in event or event.get("requestContext") is not None
 
         if is_http:
-            headers = event.get("headers", {})
-            user_type = headers.get("X-User-Type") or headers.get("x-user-type")
-            if not user_type:
-                qs = event.get("queryStringParameters") or {}
-                user_type = qs.get("user_type")
-            if user_type != "staff":
-                return {"statusCode": 403, "body": json.dumps({"error": "Forbidden"})}
+            _ = require_roles(event, {"staff"})
             qs = event.get("queryStringParameters") or {}
             tenant_id = qs.get("tenant_id", "default")
         else:

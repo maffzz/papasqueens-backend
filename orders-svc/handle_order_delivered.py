@@ -6,6 +6,13 @@ table = dynamo.Table(os.environ["ORDERS_TABLE"])
 
 def handler(event, context):
     try:
+        if event.get("httpMethod") or event.get("headers"):
+            return {"statusCode": 403, "body": json.dumps({"error": "Solo EventBridge (no HTTP)"})}
+
+        detail_type = event.get("detail-type") or event.get("detailType")
+        if detail_type and detail_type != "Order.Delivered":
+            return {"statusCode": 400, "body": json.dumps({"error": "Evento no soportado"})}
+
         if "detail" in event:
             if isinstance(event["detail"], str):
                 detail = json.loads(event["detail"])

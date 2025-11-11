@@ -1,6 +1,7 @@
 import json, os, boto3, uuid, datetime
 import base64, hashlib, hmac
 from botocore.exceptions import ClientError
+from validate import issue_token
 
 
 dynamo = boto3.resource("dynamodb")
@@ -48,13 +49,16 @@ def handler(event, context):
 
         table.put_item(Item=user_item)
 
+        access_token = issue_token(id_user, email, 'cliente')
+
         return {
             "statusCode": 201,
             "body": json.dumps({
                 "message": "Usuario registrado",
                 "id_user": id_user,
                 "email": email,
-                "type_user": "cliente"
+                "type_user": "cliente",
+                "access_token": access_token
             })
         }
     except ClientError as e:

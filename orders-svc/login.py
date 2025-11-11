@@ -1,6 +1,7 @@
 import json, os, boto3, uuid, datetime
 from botocore.exceptions import ClientError
 import base64, hashlib, hmac
+from validate import issue_token
 
 dynamo = boto3.resource("dynamodb")
 table = dynamo.Table(os.environ["USERS_TABLE"])
@@ -57,6 +58,8 @@ def handler(event, context):
             redirect_url = "/dashboard/customer"
             role = None
         
+        access_token = issue_token(user.get("id_user", email), email, user_type, role=role)
+
         return {
             "statusCode": 200,
             "body": json.dumps({
@@ -68,6 +71,7 @@ def handler(event, context):
                 "redirect_url": redirect_url,
                 "id_sucursal": user.get("id_sucursal"),
                 "name": user.get("name", ""),
+                "access_token": access_token,
                 "headers_required": {
                     "X-User-Id": user.get("id_user", email),
                     "X-User-Type": user_type,

@@ -1,34 +1,17 @@
 import json, os, boto3
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Attr
+from validate import require_roles
 
 dynamo = boto3.resource("dynamodb")
 table = dynamo.Table(os.environ["ORDERS_TABLE"])
 delivery_table = dynamo.Table(os.environ["DELIVERY_TABLE"])
 
 def get_user_info(event):
-    headers = event.get("headers", {})
-    user_email = headers.get("X-User-Email") or headers.get("x-user-email")
-    user_type = headers.get("X-User-Type") or headers.get("x-user-type")
-    user_id = headers.get("X-User-Id") or headers.get("x-user-id")
-    
-    if not user_email:
-        query_params = event.get("queryStringParameters") or {}
-        user_email = query_params.get("user_email")
-        user_type = query_params.get("user_type")
-        user_id = query_params.get("user_id")
-    
-    if user_type == "customer":
-        user_type = "cliente"
-
-    return {
-        "email": user_email,
-        "type": user_type,
-        "id": user_id
-    }
+    claims = require_roles(event, {"cliente"})
+    return {"email": claims.get("email"), "type": "cliente", "id": claims.get("sub")}
 
 def check_authorization(user_info, order_item):
-    """Verifica si el usuario tiene permiso para acceder al pedido"""
     if not user_info.get("type"):
         return False, "Información de usuario no proporcionada"
     

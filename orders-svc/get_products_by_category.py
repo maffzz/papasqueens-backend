@@ -17,6 +17,9 @@ def get_user_info(event):
         user_type = query_params.get("user_type")
         user_id = query_params.get("user_id")
     
+    if user_type == "customer":
+        user_type = "cliente"
+
     return {
         "email": user_email,
         "type": user_type,
@@ -36,7 +39,7 @@ def handler(event, context):
             resp = table.scan(FilterExpression=Attr("categoria").eq(categoria))
             return {"statusCode": 200, "body": json.dumps(resp.get("Items", []))}
         
-        if user_info.get("type") == "customer":
+        if user_info.get("type") == "cliente":
             resp = table.scan(
                 FilterExpression=Attr("categoria").eq(categoria) & Attr("available").eq(True)
             )

@@ -1,17 +1,26 @@
 import json, os, boto3, uuid, datetime
 from botocore.exceptions import ClientError
-import bcrypt
+import base64, hashlib, hmac
 
 dynamo = boto3.resource("dynamodb")
 table = dynamo.Table(os.environ["USERS_TABLE"])
 
 def hash_password(password):
-    salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+    iterations = 260000
+    salt = os.urandom(16)
+    dk = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, iterations)
+    return f"pbkdf2${iterations}${base64.b64encode(salt).decode()}${base64.b64encode(dk).decode()}"
 
 def verify_password(password, password_hash):
     try:
-        return bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
+        scheme, iterations_str, salt_b64, hash_b64 = password_hash.split('$', 3)
+        if scheme != 'pbkdf2':
+            return False
+        iterations = int(iterations_str)
+        salt = base64.b64decode(salt_b64)
+        stored = base64.b64decode(hash_b64)
+        dk = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, iterations)
+        return hmac.compare_digest(dk, stored)
     except Exception:
         return False
 
@@ -20,7 +29,6 @@ def handler(event, context):
         body = json.loads(event.get('body', '{}'))
         email = body.get('email')
         password = body.get('password')
-        type_user = body.get('type_user', 'customer')
         
         if not email or not password:
             return {"statusCode": 400, "body": json.dumps({"error": "Email y password requeridos"})}
@@ -29,39 +37,7 @@ def handler(event, context):
         user = resp.get("Item")
         
         if not user:
-            id_user = str(uuid.uuid4())
-            now = datetime.datetime.utcnow().isoformat()
-            
-            password_hash = hash_password(password)
-            
-            new_user = {
-                "email": email,
-                "id_user": id_user,
-                "type_user": type_user,
-                "password_hash": password_hash,
-                "name": body.get("name", ""),
-                "status": "activo",
-                "id_sucursal": body.get("id_sucursal", None),
-                "role": body.get("role", None) if type_user == "staff" else None,
-                "created_at": now,
-                "updated_at": now
-            }
-            
-            table.put_item(Item=new_user)
-            
-            redirect_url = "/dashboard/staff" if type_user == "staff" else "/dashboard/customer"
-            
-            return {
-                "statusCode": 201,
-                "body": json.dumps({
-                    "message": "Usuario creado exitosamente",
-                    "id_user": id_user,
-                    "type_user": type_user,
-                    "role": new_user.get("role"),
-                    "redirect_url": redirect_url,
-                    "id_sucursal": new_user.get("id_sucursal")
-                })
-            }
+            return {"statusCode": 404, "body": json.dumps({"error": "Usuario no encontrado"})}
         
         stored_hash = user.get("password_hash")
         if not stored_hash or not verify_password(password, stored_hash):
@@ -70,7 +46,10 @@ def handler(event, context):
         if user.get("status") != "activo":
             return {"statusCode": 403, "body": json.dumps({"error": "Usuario inactivo"})}
         
-        user_type = user.get("type_user", "customer")
+        user_type_db = user.get("type_user", "cliente")
+        user_type = "staff" if user_type_db == "staff" else "cliente"
+        if user_type != "staff":
+            return {"statusCode": 403, "body": json.dumps({"error": "Solo staff puede iniciar sesión aquí. Los clientes deben usar /register"})}
         if user_type == "staff":
             redirect_url = "/dashboard/staff"
             role = user.get("role", "staff")

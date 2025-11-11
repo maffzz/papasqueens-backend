@@ -17,6 +17,9 @@ def get_user_info(event):
         user_type = query_params.get("user_type")
         user_id = query_params.get("user_id")
     
+    if user_type == "customer":
+        user_type = "cliente"
+
     return {
         "email": user_email,
         "type": user_type,

@@ -8,15 +8,21 @@ s3 = boto3.client("s3")
 
 def handler(event, context):
     try:
-        headers = event.get("headers", {})
-        user_type = headers.get("X-User-Type") or headers.get("x-user-type")
-        if not user_type:
-            qs = event.get("queryStringParameters") or {}
-            user_type = qs.get("user_type")
-        if user_type != "staff":
-            return {"statusCode": 403, "body": json.dumps({"error": "Forbidden"})}
+        is_http = bool(event.get("headers")) or "httpMethod" in event or event.get("requestContext") is not None
 
-        tenant_id = event.get("tenant_id", "default")
+        if is_http:
+            headers = event.get("headers", {})
+            user_type = headers.get("X-User-Type") or headers.get("x-user-type")
+            if not user_type:
+                qs = event.get("queryStringParameters") or {}
+                user_type = qs.get("user_type")
+            if user_type != "staff":
+                return {"statusCode": 403, "body": json.dumps({"error": "Forbidden"})}
+            qs = event.get("queryStringParameters") or {}
+            tenant_id = qs.get("tenant_id", "default")
+        else:
+            tenant_id = "default"
+
         resp = analytics_table.scan(FilterExpression=Attr("tenant_id").eq(tenant_id))
         items = resp.get("Items", [])
         if not items:

@@ -5,6 +5,8 @@ provider:
   name: aws
   runtime: python3.13
   region: us-east-1
+  memorySize: 1024
+  timeout: 30
   iam:
     role: arn:aws:iam::850561899873:role/LabRole
   logs:
@@ -336,6 +338,8 @@ functions:
           path: orders/{id_order}
           method: get
           cors: true
+    memorySize: 512
+    timeout: 15
   getOrderStatus:
     handler: orders-svc/get_order_status.handler
     events:
@@ -343,6 +347,8 @@ functions:
           path: orders/{id_order}/status
           method: get
           cors: true
+    memorySize: 512
+    timeout: 15
   getCustomerOrders:
     handler: orders-svc/get_customer_orders.handler
     events:
@@ -350,6 +356,8 @@ functions:
           path: orders/customer/{id_customer}
           method: get
           cors: true
+    memorySize: 512
+    timeout: 15
   updateOrderStatus:
     handler: orders-svc/update_order_status.handler
     events:
@@ -357,6 +365,8 @@ functions:
           path: orders/{id_order}/status
           method: patch
           cors: true
+    memorySize: 512
+    timeout: 15
   cancelOrder:
     handler: orders-svc/cancel_order.handler
     events:
@@ -364,6 +374,8 @@ functions:
           path: orders/{id_order}/cancel
           method: post
           cors: true
+    memorySize: 512
+    timeout: 15
   handleOrderDelivered:
     handler: orders-svc/handle_order_delivered.handler
     events:
@@ -401,6 +413,8 @@ functions:
           path: kitchen/queue
           method: get
           cors: true
+    memorySize: 512
+    timeout: 15
   acceptOrder:
     handler: kitchen-svc/accept_order.handler
     events:
@@ -422,6 +436,8 @@ functions:
           path: kitchen/menu
           method: get
           cors: true
+    memorySize: 512
+    timeout: 15
   addMenuItem:
     handler: kitchen-svc/add_menu_item.handler
     events:
@@ -443,6 +459,8 @@ functions:
           path: menu/{id_producto}
           method: delete
           cors: true
+    memorySize: 512
+    timeout: 15
   manageStaff:
     handler: kitchen-svc/manage_staff.handler
     events:
@@ -454,6 +472,8 @@ functions:
           path: staff/{id_staff}
           method: patch
           cors: true
+    memorySize: 1536
+    timeout: 30
   listStaff:
     handler: kitchen-svc/list_staff.handler
     events:
@@ -491,6 +511,8 @@ functions:
           path: delivery/{id_delivery}/status
           method: patch
           cors: true
+    memorySize: 512
+    timeout: 15
   handoffOrder:
     handler: delivery-svc/handoff_order.handler
     events:
@@ -512,6 +534,8 @@ functions:
           path: delivery/{id_delivery}
           method: get
           cors: true
+    memorySize: 512
+    timeout: 15
   trackRider:
     handler: delivery-svc/track_rider.handler
     events:
@@ -519,6 +543,8 @@ functions:
           path: delivery/{id_delivery}/track
           method: get
           cors: true
+    memorySize: 512
+    timeout: 15
   listRiders:
     handler: delivery-svc/list_riders.handler
     events:
@@ -526,6 +552,8 @@ functions:
           path: riders
           method: get
           cors: true
+    memorySize: 512
+    timeout: 15
   updateRiderStatus:
     handler: delivery-svc/update_rider_status.handler
     events:
@@ -533,6 +561,8 @@ functions:
           path: riders/{id_staff}/status
           method: patch
           cors: true
+    memorySize: 512
+    timeout: 15
   updateRiderLocation:
     handler: delivery-svc/update_rider_location.handler
     events:
@@ -540,6 +570,8 @@ functions:
           path: delivery/location
           method: post
           cors: true
+    memorySize: 512
+    timeout: 15
   deliveryMetrics:
     handler: delivery-svc/delivery_metrics.handler
     events:
@@ -625,13 +657,24 @@ functions:
     handler: analytics-svc/export_analytics_report.handler
     events:
       - schedule: rate(1 day)
+    memorySize: 2048
+    timeout: 120
 
   # LOGIN
   userLogin:
-    handler: login.handler
+    handler: orders-svc/login.handler
     events:
       - http:
           path: login
+          method: post
+          cors: true
+    environment:
+      USERS_TABLE: ${self:provider.environment.USERS_TABLE}
+  registerUser:
+    handler: orders-svc/register.handler
+    events:
+      - http:
+          path: register
           method: post
           cors: true
     environment:

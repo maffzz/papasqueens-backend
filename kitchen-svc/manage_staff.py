@@ -1,7 +1,6 @@
 import json, boto3, os, uuid, datetime
 from botocore.exceptions import ClientError
-import base64
-import bcrypt
+import base64, hashlib, hmac
 
 dynamo = boto3.resource("dynamodb")
 table = dynamo.Table(os.environ["STAFF_TABLE"])
@@ -9,8 +8,10 @@ eb = boto3.client("events")
 s3 = boto3.client("s3")
 
 def hash_password(password):
-    salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+    iterations = 260000
+    salt = os.urandom(16)
+    dk = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, iterations)
+    return f"pbkdf2${iterations}${base64.b64encode(salt).decode()}${base64.b64encode(dk).decode()}"
 
 def manage_staff(event, context):
     try:

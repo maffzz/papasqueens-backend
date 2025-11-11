@@ -18,6 +18,9 @@ def get_user_info(event):
         user_type = query_params.get("user_type")
         user_id = query_params.get("user_id")
     
+    if user_type == "customer":
+        user_type = "cliente"
+
     return {
         "email": user_email,
         "type": user_type,
@@ -30,9 +33,9 @@ def check_authorization(user_info, order_item):
         return False, "Información de usuario no proporcionada"
     
     if user_info.get("type") == "staff":
-        return True, None
+        return False, "Solo clientes pueden consultar el estado de su pedido"
     
-    if user_info.get("type") == "customer":
+    if user_info.get("type") == "cliente":
         order_customer_id = order_item.get("id_customer")
         user_customer_id = user_info.get("id")
         
@@ -77,12 +80,10 @@ def handler(event, context):
                     "tiempo_llegada": delivery.get("tiempo_llegada")
                 }
                 
-                # Incluir ubicación GPS si existe (para tracking en mapa)
                 last_location = delivery.get("last_location")
                 if last_location:
                     delivery_info["location"] = last_location
                 elif delivery.get("lat") and delivery.get("lon"):
-                    # Formato alternativo de coordenadas
                     delivery_info["location"] = {
                         "lat": delivery.get("lat"),
                         "lon": delivery.get("lon")

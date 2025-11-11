@@ -15,6 +15,9 @@ def get_user_info(event):
         user_type = query_params.get("user_type")
         user_id = query_params.get("user_id")
     
+    if user_type == "customer":
+        user_type = "cliente"
+
     return {
         "type": user_type,
         "id": user_id
@@ -30,13 +33,11 @@ def handler(event, context):
         if not order_item:
             return {"statusCode": 404, "body": json.dumps({"error": "Pedido no encontrado"})}
         
-        if user_info.get("type") == "staff":
-            pass
-        elif user_info.get("type") == "customer":
+        if user_info.get("type") == "cliente":
             if order_item.get("id_customer") != user_info.get("id"):
                 return {"statusCode": 403, "body": json.dumps({"error": "Solo puedes cancelar tus propios pedidos"})}
         else:
-            return {"statusCode": 401, "body": json.dumps({"error": "Información de usuario no válida"})}
+            return {"statusCode": 403, "body": json.dumps({"error": "Solo clientes pueden cancelar pedidos"})}
         
         current_status = order_item.get("status")
         if current_status in ["en_preparacion", "listo_para_entrega", "en_camino", "entregado"]:

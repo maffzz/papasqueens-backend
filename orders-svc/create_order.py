@@ -19,6 +19,9 @@ def get_user_info(event):
         user_type = query_params.get("user_type")
         user_id = query_params.get("user_id")
     
+    if user_type == "customer":
+        user_type = "cliente"
+
     return {
         "type": user_type,
         "id": user_id
@@ -34,17 +37,19 @@ def handler(event, context):
         id_customer = body["id_customer"]
         list_id_products = body["list_id_products"]
 
+        if user_info.get("type") != "cliente":
+            return {"statusCode": 403, "body": json.dumps({"error": "Solo clientes pueden crear pedidos"})}
+
         if not list_id_products:
             log_error("Intento de crear pedido sin productos", None, event, context, {"id_customer": id_customer})
             return {"statusCode": 400, "body": json.dumps({"error": "Debe incluir productos"})}
         
-        if user_info.get("type") == "customer":
-            if id_customer != user_info.get("id"):
-                log_error("Cliente intenta crear pedido para otro cliente", None, event, context, {
-                    "id_customer_requested": id_customer,
-                    "id_customer_authenticated": user_info.get("id")
-                })
-                return {"statusCode": 403, "body": json.dumps({"error": "Solo puedes crear pedidos para tu propia cuenta"})}
+        if id_customer != user_info.get("id"):
+            log_error("Cliente intenta crear pedido para otro cliente", None, event, context, {
+                "id_customer_requested": id_customer,
+                "id_customer_authenticated": user_info.get("id")
+            })
+            return {"statusCode": 403, "body": json.dumps({"error": "Solo puedes crear pedidos para tu propia cuenta"})}
 
         order_id = str(uuid.uuid4())
         now = datetime.datetime.utcnow().isoformat()

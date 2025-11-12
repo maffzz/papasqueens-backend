@@ -2,13 +2,11 @@ import os, json, time, hmac, hashlib, base64
 
 SECRET = os.environ.get("AUTH_SECRET", "dev-secret").encode()
 
-
 def _b64url_decode(s: str) -> bytes:
     pad = 4 - (len(s) % 4)
     if pad and pad != 4:
         s += "=" * pad
     return base64.urlsafe_b64decode(s.encode())
-
 
 def verify_jwt(token: str):
     try:
@@ -30,7 +28,6 @@ def verify_jwt(token: str):
         return payload
     except Exception:
         return None
-
 
 def generate_policy(principal_id: str, effect: str, resource: str, context: dict = None):
     auth_response = {

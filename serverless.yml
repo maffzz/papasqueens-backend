@@ -8,7 +8,7 @@ custom:
     strip: true
     dockerizePip: true
   defaultLayers: &defaultLayers
-    - Fn::GetAtt: [SharedLambdaLayer, Arn]
+    - Ref: SharedLambdaLayer
 
 layers:
   shared:

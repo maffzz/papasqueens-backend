@@ -5,7 +5,8 @@ provider:
   name: aws
   runtime: python3.13
   region: us-east-1
-  cfnRole: arn:aws:iam::850561899873:role/LabRole
+  memorySize: 1024
+  timeout: 30
   iam:
     role: arn:aws:iam::850561899873:role/LabRole
   logs:
@@ -553,7 +554,7 @@ functions:
         - ./** 
     events:
       - http:
-          path: delivery/{id_order}
+          path: delivery/{id_delivery}
           method: get
           cors: true
   trackRider:
@@ -563,7 +564,7 @@ functions:
         - ./** 
     events:
       - http:
-          path: delivery/{id_order}/track
+          path: delivery/{id_delivery}/track
           method: get
           cors: true
   listRiders:

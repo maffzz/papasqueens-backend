@@ -1,5 +1,4 @@
 import json, boto3, os
-from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
 
 dynamo = boto3.resource("dynamodb")
@@ -7,13 +6,11 @@ delivery_table = dynamo.Table(os.environ["DELIVERY_TABLE"])
 
 def handler(event, context):
     try:
-        id_order = event["pathParameters"]["id_order"]
-        resp = delivery_table.scan(FilterExpression=Attr("id_order").eq(id_order))
-        items = resp.get("Items", [])
-        if not items:
-            return {"statusCode": 404, "body": json.dumps({"error": "No se encontró la entrega"})}
-        
-        delivery = items[0]
+        id_delivery = event["pathParameters"]["id_delivery"]
+        resp = delivery_table.get_item(Key={"id_delivery": id_delivery})
+        delivery = resp.get("Item")
+        if not delivery:
+            return {"statusCode": 404, "body": json.dumps({"error": "Entrega no encontrada"})}
         delivery_status = delivery.get("status", "")
         
         if delivery_status == "en_camino":

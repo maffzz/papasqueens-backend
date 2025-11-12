@@ -7,9 +7,13 @@ eb = boto3.client("events")
 
 def handler(event, context):
     try:
+        headers = event.get("headers", {}) or {}
+        qs = event.get("queryStringParameters") or {}
         id_delivery = event["pathParameters"]["id_delivery"]
         body = json.loads(event.get("body", "{}"))
         new_status = body["status"]
+        tenant_id = body.get("tenant_id") or headers.get("X-Tenant-Id") or headers.get("x-tenant-id") or qs.get("tenant_id") or "default"
+        actor = body.get("id_staff") or headers.get("X-User-Id") or headers.get("x-user-id")
 
         if new_status not in ["asignado", "en_camino", "entregado"]:
             return {"statusCode": 400, "body": json.dumps({"error": "Estado inválido"})}
@@ -19,14 +23,16 @@ def handler(event, context):
             return {"statusCode": 404, "body": json.dumps({"error": "Entrega no encontrada"})}
         
         delivery = delivery_resp["Item"]
+        if delivery.get("tenant_id") != tenant_id:
+            return {"statusCode": 404, "body": json.dumps({"error": "Entrega no pertenece al tenant"})}
         id_order = delivery.get("id_order")
         
         now = datetime.datetime.utcnow().isoformat()
         delivery_table.update_item(
             Key={"id_delivery": id_delivery},
-            UpdateExpression="SET #s = :s, updated_at = :u",
+            UpdateExpression="SET #s = :s, status_by = :by, updated_at = :u",
             ExpressionAttributeNames={"#s": "status"},
-            ExpressionAttributeValues={":s": new_status, ":u": now}
+            ExpressionAttributeValues={":s": new_status, ":by": actor or "unknown", ":u": now}
         )
 
         event_type = "Order.EnRoute" if new_status == "en_camino" else "Order.Delivered" if new_status == "entregado" else "Delivery.Updated"

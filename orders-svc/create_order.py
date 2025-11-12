@@ -75,6 +75,29 @@ def handler(event, context):
             ]
         )
 
+        # Iniciar Step Functions (best-effort): por ARN en env o buscando por nombre
+        try:
+            sfn = boto3.client('stepfunctions')
+            sfn_arn = os.environ.get('ORDER_SFN_ARN')
+            if not sfn_arn:
+                target_name = os.environ.get('ORDER_SFN_NAME', 'papasqueens-order-workflow')
+                paginator = sfn.get_paginator('list_state_machines')
+                for page in paginator.paginate():
+                    for sm in page.get('stateMachines', []):
+                        if sm.get('name') == target_name:
+                            sfn_arn = sm.get('stateMachineArn')
+                            break
+                    if sfn_arn:
+                        break
+            if sfn_arn:
+                sfn_input = {"id_order": order_id, "tenant_id": tenant_id}
+                resp = sfn.start_execution(stateMachineArn=sfn_arn, input=json.dumps(sfn_input))
+                log_info("State Machine iniciada", event, context, {"executionArn": resp.get('executionArn')})
+            else:
+                log_error("State Machine no encontrada para iniciar", None, event, context, {"hint": "Defina ORDER_SFN_ARN o ORDER_SFN_NAME"})
+        except Exception as e:
+            log_error("Fallo al iniciar Step Functions", e, event, context, {"order_id": order_id})
+
         log_info("Pedido creado exitosamente", event, context, {"order_id": order_id})
         return {"statusCode": 201, "body": json.dumps({"id_order": order_id, "status": "recibido"})}
 

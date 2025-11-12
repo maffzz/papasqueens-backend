@@ -8,19 +8,21 @@ eb = boto3.client("events")
 def handler(event, context):
     try:
         body = json.loads(event.get("body", "{}"))
+        headers = event.get("headers", {}) or {}
         order_id = event["pathParameters"]["order_id"]
-        staff_id = body["id_staff"]
+        staff_id = body.get("id_staff") or headers.get("X-User-Id") or headers.get("x-user-id")
 
         now = datetime.datetime.utcnow().isoformat()
         table.update_item(
             Key={"order_id": order_id},
-            UpdateExpression="SET #s = :s, list_id_staff = list_append(if_not_exists(list_id_staff, :empty), :sid), start_time = :st, updated_at = :u",
+            UpdateExpression="SET #s = :s, list_id_staff = list_append(if_not_exists(list_id_staff, :empty), :sid), start_time = :st, accepted_by = :by, accepted_at = :st, updated_at = :u",
             ExpressionAttributeNames={"#s": "status"},
             ExpressionAttributeValues={
                 ":s": "en_preparacion",
                 ":sid": [staff_id],
                 ":empty": [],
                 ":st": now,
+                ":by": staff_id,
                 ":u": now
             }
         )

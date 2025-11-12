@@ -13,6 +13,7 @@ provider:
   logs:
     frameworkLambda: true
   environment:
+    ORDER_SFN_NAME: papasqueens-order-workflow
     EVENT_BUS: papasqueens-event-bus
     ORDERS_TABLE: Orders
     KITCHEN_TABLE: Kitchen
@@ -684,6 +685,16 @@ functions:
     events:
       - http:
           path: analytics/dashboard
+          method: get
+          cors: true
+  getWorkflowKpis:
+    handler: analytics-svc/get_workflow_kpis.handler
+    package:
+      include:
+        - ./**
+    events:
+      - http:
+          path: analytics/workflow-kpis
           method: get
           cors: true
   exportAnalyticsReport:

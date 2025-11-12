@@ -9,19 +9,25 @@ eb = boto3.client("events")
 def handler(event, context):
     try:
         body = json.loads(event.get("body", "{}"))
+        headers = event.get("headers", {}) or {}
+        qs = event.get("queryStringParameters") or {}
         id_order = event["pathParameters"]["id_order"]
         now = datetime.datetime.utcnow().isoformat()
+        tenant_id = body.get("tenant_id") or headers.get("X-Tenant-Id") or headers.get("x-tenant-id") or qs.get("tenant_id") or "default"
+        staff_id = body.get("id_staff") or headers.get("X-User-Id") or headers.get("x-user-id")
 
-        response = delivery_table.scan(FilterExpression=boto3.dynamodb.conditions.Attr("id_order").eq(id_order))
+        response = delivery_table.scan(FilterExpression=boto3.dynamodb.conditions.Attr("id_order").eq(id_order) & Attr("tenant_id").eq(tenant_id))
         items = response.get("Items", [])
         if not items:
             return {"statusCode": 404, "body": json.dumps({"error": "Entrega no encontrada"})}
 
         delivery = items[0]
+        if delivery.get("tenant_id") != tenant_id:
+            return {"statusCode": 404, "body": json.dumps({"error": "Entrega no pertenece al tenant"})}
         delivery_table.update_item(
             Key={"id_delivery": delivery["id_delivery"]},
-            UpdateExpression="SET status=:s, tiempo_salida=:t, updated_at=:u",
-            ExpressionAttributeValues={":s": "en_camino", ":t": now, ":u": now}
+            UpdateExpression="SET status=:s, tiempo_salida=:t, handoff_by=:by, updated_at=:u",
+            ExpressionAttributeValues={":s": "en_camino", ":t": now, ":by": staff_id or "unknown", ":u": now}
         )
 
         eb.put_events(

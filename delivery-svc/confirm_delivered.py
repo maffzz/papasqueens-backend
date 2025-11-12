@@ -11,17 +11,21 @@ def handler(event, context):
     try:
         id_order = event["pathParameters"]["id_order"]
         body = json.loads(event.get("body", "{}"))
+        headers = event.get("headers", {}) or {}
+        qs = event.get("queryStringParameters") or {}
         proof_data = body.get("proof_data")
-        tenant_id = body.get("tenant_id", "default")
+        tenant_id = body.get("tenant_id") or headers.get("X-Tenant-Id") or headers.get("x-tenant-id") or qs.get("tenant_id") or "default"
+        staff_id = body.get("id_staff") or headers.get("X-User-Id") or headers.get("x-user-id")
 
-        resp = delivery_table.scan(FilterExpression=boto3.dynamodb.conditions.Attr("id_order").eq(id_order))
+        resp = delivery_table.scan(FilterExpression=boto3.dynamodb.conditions.Attr("id_order").eq(id_order) & Attr("tenant_id").eq(tenant_id))
         items = resp.get("Items", [])
         if not items:
             return {"statusCode": 404, "body": json.dumps({"error": "Entrega no encontrada"})}
 
         delivery = items[0]
         id_delivery = delivery["id_delivery"]
-        tenant_id = delivery.get("tenant_id", tenant_id)
+        if delivery.get("tenant_id") != tenant_id:
+            return {"statusCode": 404, "body": json.dumps({"error": "Entrega no pertenece al tenant"})}
         now = datetime.datetime.utcnow().isoformat()
         proof_url = None
 
@@ -33,8 +37,8 @@ def handler(event, context):
 
         delivery_table.update_item(
             Key={"id_delivery": id_delivery},
-            UpdateExpression="SET status=:s, tiempo_llegada=:t, proof_url=:p, updated_at=:u",
-            ExpressionAttributeValues={":s": "entregado", ":t": now, ":p": proof_url, ":u": now}
+            UpdateExpression="SET status=:s, tiempo_llegada=:t, delivered_by=:by, proof_url=:p, updated_at=:u",
+            ExpressionAttributeValues={":s": "entregado", ":t": now, ":by": staff_id or delivery.get('id_staff', 'unknown'), ":p": proof_url, ":u": now}
         )
 
         eb.put_events(

@@ -11,7 +11,10 @@ def handler(event, context):
         detail = event.get("detail", {})
         order_id = detail["id_order"]
 
-        resp = delivery_table.scan(FilterExpression=Attr("id_order").eq(order_id))
+        resp = delivery_table.query(
+            IndexName="OrderIndex",
+            KeyConditionExpression=Key("id_order").eq(order_id)
+        )
         if not resp.get("Items"):
             return {"statusCode": 404, "body": json.dumps({"error": "Entrega no encontrada"})}
         delivery = resp["Items"][0]

@@ -37,7 +37,8 @@ def handler(event, context):
         proof_url = None
         if proof_data:
             image_bytes = base64.b64decode(proof_data)
-            key = f"{tenant_id}/{id_delivery}/proof_{uuid.uuid4()}.jpg"
+            order_id_for_key = id_order or "unknown_order"
+            key = f"{tenant_id}/{order_id_for_key}/proofs/{id_delivery}_{uuid.uuid4()}.jpg"
             s3.put_object(
                 Bucket=os.environ["PROOF_BUCKET"],
                 Key=key,
@@ -62,7 +63,7 @@ def handler(event, context):
             Entries=[
                 {
                     "Source": "delivery-svc",
-                    "DetailType": "Delivery.Delivered",
+                    "DetailType": "Order.Delivered",
                     "Detail": json.dumps({
                         "id_delivery": id_delivery,
                         "id_order": id_order,

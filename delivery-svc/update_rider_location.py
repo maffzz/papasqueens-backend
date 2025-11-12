@@ -1,5 +1,5 @@
 import json, boto3, os, datetime
-from boto3.dynamodb.conditions import Attr
+from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
 from validate import require_roles
 
@@ -19,7 +19,10 @@ def handler(event, context):
         if not id_order or lat is None or lon is None:
             return {"statusCode": 400, "body": json.dumps({"error": "Faltan campos requeridos: id_order, lat, lon"})}
         
-        resp = delivery_table.scan(FilterExpression=Attr("id_order").eq(id_order))
+        resp = delivery_table.query(
+            IndexName="OrderIndex",
+            KeyConditionExpression=Key("id_order").eq(id_order)
+        )
         items = resp.get("Items", [])
         
         if not items:

@@ -12,7 +12,7 @@ provider:
   logs:
     frameworkLambda: true
   environment:
-    EVENT_BUS: papasqueens-event-bus
+    EVENT_BUS: papasqueens-event-bus-${sls:stage}
     ORDERS_TABLE: Orders
     KITCHEN_TABLE: Kitchen
     DELIVERY_TABLE: Delivery
@@ -366,16 +366,6 @@ functions:
           authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
-  updateOrderStatus:
-    handler: orders-svc/update_order_status.handler
-    events:
-      - http:
-          path: orders/{id_order}/status
-          method: patch
-          cors: true
-          authorizer: jwtAuthorizer
-    memorySize: 512
-    timeout: 15
   cancelOrder:
     handler: orders-svc/cancel_order.handler
     events:
@@ -390,7 +380,7 @@ functions:
     handler: orders-svc/handle_order_delivered.handler
     events:
       - eventBridge:
-          eventBus: papasqueens-event-bus
+          eventBus: ${self:provider.environment.EVENT_BUS}
           pattern:
             detail-type: ["Order.Delivered"]
   listProducts:
@@ -415,7 +405,7 @@ functions:
     handler: kitchen-svc/receive_order.handler
     events:
       - eventBridge:
-          eventBus: papasqueens-event-bus
+          eventBus: ${self:provider.environment.EVENT_BUS}
           pattern:
             detail-type: ["Order.Created"]
   getKitchenQueue:
@@ -503,20 +493,13 @@ functions:
           method: get
           cors: true
           authorizer: jwtAuthorizer
-  syncKitchenMetrics:
-    handler: kitchen-svc/sync_kitchen_metrics.handler
-    events:
-      - eventBridge:
-          eventBus: papasqueens-event-bus
-          pattern:
-            detail-type: ["Order.Prepared"]
 
   # DELIVERY-SVC
   receivePreparedOrder:
     handler: delivery-svc/receive_prepared_order.handler
     events:
       - eventBridge:
-          eventBus: papasqueens-event-bus
+          eventBus: ${self:provider.environment.EVENT_BUS}
           pattern:
             detail-type: ["Order.Prepared"]
   assignDelivery:
@@ -537,14 +520,6 @@ functions:
           authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
-  handoffOrder:
-    handler: delivery-svc/handoff_order.handler
-    events:
-      - http:
-          path: delivery/{id_delivery}/handoff
-          method: post
-          cors: true
-          authorizer: jwtAuthorizer
   confirmDelivered:
     handler: delivery-svc/confirm_delivered.handler
     events:
@@ -558,16 +533,6 @@ functions:
     events:
       - http:
           path: delivery/{id_delivery}
-          method: get
-          cors: true
-          authorizer: jwtAuthorizer
-    memorySize: 512
-    timeout: 15
-  trackRider:
-    handler: delivery-svc/track_rider.handler
-    events:
-      - http:
-          path: delivery/{id_delivery}/track
           method: get
           cors: true
           authorizer: jwtAuthorizer
@@ -603,41 +568,35 @@ functions:
           authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
-  deliveryMetrics:
-    handler: delivery-svc/delivery_metrics.handler
-    events:
-      - eventBridge:
-          eventBus: papasqueens-event-bus
-          pattern:
-            detail-type: ["Order.Delivered"]
+  
 
   # ANALYTICS-SVC
   collectOrderMetrics:
     handler: analytics-svc/collect_order_metrics.handler
     events:
       - eventBridge:
-          eventBus: papasqueens-event-bus
+          eventBus: ${self:provider.environment.EVENT_BUS}
           pattern:
             detail-type: ["Order.Created"]
   collectKitchenMetrics:
     handler: analytics-svc/collect_kitchen_metrics.handler
     events:
       - eventBridge:
-          eventBus: papasqueens-event-bus
+          eventBus: ${self:provider.environment.EVENT_BUS}
           pattern:
             detail-type: ["Order.Prepared"]
   collectDeliveryMetrics:
     handler: analytics-svc/collect_delivery_metrics.handler
     events:
       - eventBridge:
-          eventBus: papasqueens-event-bus
+          eventBus: ${self:provider.environment.EVENT_BUS}
           pattern:
             detail-type: ["Order.Delivered"]
   collectStaffMetrics:
     handler: analytics-svc/collect_staff_metrics.handler
     events:
       - eventBridge:
-          eventBus: papasqueens-event-bus
+          eventBus: ${self:provider.environment.EVENT_BUS}
           pattern:
             detail-type: 
               - "Staff.Updated"
@@ -646,14 +605,14 @@ functions:
     handler: analytics-svc/order_assigned_consumer.handler
     events:
       - eventBridge:
-          eventBus: papasqueens-event-bus
+          eventBus: ${self:provider.environment.EVENT_BUS}
           pattern:
             detail-type: ["Order.Assigned"]
   orderCancelledConsumer:
     handler: analytics-svc/order_cancelled_consumer.handler
     events:
       - eventBridge:
-          eventBus: papasqueens-event-bus
+          eventBus: ${self:provider.environment.EVENT_BUS}
           pattern:
             detail-type: ["Order.Cancelled"]
   getAnalyticsOrders:

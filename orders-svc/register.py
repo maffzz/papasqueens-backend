@@ -1,18 +1,11 @@
 import json, os, boto3, uuid, datetime
 import base64, hashlib, hmac
 from botocore.exceptions import ClientError
-from validate import issue_token
+from validate import issue_token, hash_password
 
 
 dynamo = boto3.resource("dynamodb")
 table = dynamo.Table(os.environ["USERS_TABLE"])
-
-
-def hash_password(password: str) -> str:
-    iterations = 260000
-    salt = os.urandom(16)
-    dk = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, iterations)
-    return f"pbkdf2${iterations}${base64.b64encode(salt).decode()}${base64.b64encode(dk).decode()}"
 
 
 def handler(event, context):

@@ -30,6 +30,25 @@ def issue_token(user_id: str, email: str, user_type: str, role: str = None, expi
     sig_b64 = _b64url_encode(sig)
     return f"{header_b64}.{payload_b64}.{sig_b64}"
 
+def hash_password(password: str) -> str:
+    iterations = 260000
+    salt = os.urandom(16)
+    dk = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, iterations)
+    return f"pbkdf2${iterations}${_b64url_encode(salt)}${_b64url_encode(dk)}"
+
+def verify_password(password: str, password_hash: str) -> bool:
+    try:
+        scheme, iterations_str, salt_b64, hash_b64 = password_hash.split('$', 3)
+        if scheme != 'pbkdf2':
+            return False
+        iterations = int(iterations_str)
+        salt = _b64url_decode(salt_b64)
+        stored = _b64url_decode(hash_b64)
+        dk = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, iterations)
+        return hmac.compare_digest(dk, stored)
+    except Exception:
+        return False
+
 def verify_token(token: str) -> dict:
     parts = token.split(".")
     if len(parts) != 3:

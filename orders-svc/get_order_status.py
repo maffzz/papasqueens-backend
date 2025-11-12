@@ -1,6 +1,6 @@
 import json, os, boto3
 from botocore.exceptions import ClientError
-from boto3.dynamodb.conditions import Attr
+from boto3.dynamodb.conditions import Attr, Key
 from validate import require_roles
 
 dynamo = boto3.resource("dynamodb")
@@ -47,8 +47,9 @@ def handler(event, context):
         order_status = item.get("status", "")
         
         if order_status in ["en_camino", "listo_para_entrega", "entregado"]:
-            delivery_resp = delivery_table.scan(
-                FilterExpression=Attr("id_order").eq(order_id)
+            delivery_resp = delivery_table.query(
+                IndexName="OrderIndex",
+                KeyConditionExpression=Key("id_order").eq(order_id)
             )
             delivery_items = delivery_resp.get("Items", [])
             

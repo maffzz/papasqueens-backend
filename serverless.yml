@@ -5,9 +5,8 @@ provider:
   name: aws
   runtime: python3.13
   region: us-east-1
+  cfnRole: arn:aws:iam::850561899873:role/LabRole
   logs:
-    httpApi:
-      accessLogging: true
     restApi:
       accessLogging: true
     frameworkLambda: true

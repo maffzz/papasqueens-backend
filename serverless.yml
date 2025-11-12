@@ -1,6 +1,5 @@
 org: maferlazon
 service: papasqueens-platform
-frameworkVersion: '3'
 
 provider:
   name: aws
@@ -13,7 +12,6 @@ provider:
       accessLogging: true
     frameworkLambda: true
   environment:
-    AWS_REGION: us-east-1
     EVENT_BUS: papasqueens-event-bus
     ORDERS_TABLE: Orders
     KITCHEN_TABLE: Kitchen
@@ -21,7 +19,6 @@ provider:
     ANALYTICS_TABLE: Analytics
     STAFF_TABLE: Staff
     MENU_TABLE: MenuItems
-    PRODUCTS_TABLE: Products
     SUCURSAL_TABLE: Sucursals
     USERS_TABLE: papasqueens-users
     MENU_BUCKET: papasqueens-menu-images
@@ -202,18 +199,6 @@ resources:
             Projection:
               ProjectionType: ALL
 
-    ProductsTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: Products
-        BillingMode: PAY_PER_REQUEST
-        AttributeDefinitions:
-          - AttributeName: id_producto
-            AttributeType: S
-        KeySchema:
-          - AttributeName: id_producto
-            KeyType: HASH
-    
     UsersTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -258,10 +243,10 @@ resources:
         TableName: Sucursals
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
-          - AttributeName: id_sucursal
+          - AttributeName: tenant_id
             AttributeType: S
         KeySchema:
-          - AttributeName: id_sucursal
+          - AttributeName: tenant_id
             KeyType: HASH
 
     # EVENTBRIDGE BUS
@@ -328,6 +313,9 @@ functions:
   # ORDERS-SVC
   createOrder:
     handler: orders-svc/create_order.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: orders
@@ -335,6 +323,9 @@ functions:
           cors: true
   getOrder:
     handler: orders-svc/get_order.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: orders/{id_order}
@@ -342,6 +333,9 @@ functions:
           cors: true
   getOrderStatus:
     handler: orders-svc/get_order_status.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: orders/{id_order}/status
@@ -349,6 +343,9 @@ functions:
           cors: true
   getCustomerOrders:
     handler: orders-svc/get_customer_orders.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: orders/customer/{id_customer}
@@ -356,6 +353,9 @@ functions:
           cors: true
   updateOrderStatus:
     handler: orders-svc/update_order_status.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: orders/{id_order}/status
@@ -363,6 +363,9 @@ functions:
           cors: true
   cancelOrder:
     handler: orders-svc/cancel_order.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: orders/{id_order}/cancel
@@ -370,29 +373,21 @@ functions:
           cors: true
   handleOrderDelivered:
     handler: orders-svc/handle_order_delivered.handler
+    package:
+      include:
+        - ./** 
     events:
       - eventBridge:
           eventBus: papasqueens-event-bus
           pattern:
             detail-type: ["Order.Delivered"]
-  listProducts:
-    handler: orders-svc/list_products.handler
-    events:
-      - http:
-          path: menu
-          method: get
-          cors: true
-  getProductsByCategory:
-    handler: orders-svc/get_products_by_category.handler
-    events:
-      - http:
-          path: menu/category/{categoria}
-          method: get
-          cors: true
 
   # KITCHEN-SVC
   receiveOrder:
     handler: kitchen-svc/receive_order.handler
+    package:
+      include:
+        - ./** 
     events:
       - eventBridge:
           eventBus: papasqueens-event-bus
@@ -400,6 +395,9 @@ functions:
             detail-type: ["Order.Created"]
   getKitchenQueue:
     handler: kitchen-svc/get_kitchen_queue.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: kitchen/queue
@@ -407,6 +405,9 @@ functions:
           cors: true
   acceptOrder:
     handler: kitchen-svc/accept_order.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: kitchen/orders/{order_id}/accept
@@ -414,6 +415,9 @@ functions:
           cors: true
   packOrder:
     handler: kitchen-svc/pack_order.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: kitchen/orders/{order_id}/pack
@@ -421,13 +425,19 @@ functions:
           cors: true
   listMenuItems:
     handler: kitchen-svc/list_menu_items.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
-          path: kitchen/menu
+          path: menu
           method: get
           cors: true
   addMenuItem:
     handler: kitchen-svc/add_menu_item.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: menu
@@ -435,6 +445,9 @@ functions:
           cors: true
   updateMenuItem:
     handler: kitchen-svc/update_menu_item.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: menu/{id_producto}
@@ -442,6 +455,9 @@ functions:
           cors: true
   deleteMenuItem:
     handler: kitchen-svc/delete_menu_item.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: menu/{id_producto}
@@ -449,6 +465,9 @@ functions:
           cors: true
   manageStaff:
     handler: kitchen-svc/manage_staff.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: staff
@@ -460,6 +479,9 @@ functions:
           cors: true
   listStaff:
     handler: kitchen-svc/list_staff.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: staff
@@ -467,6 +489,9 @@ functions:
           cors: true
   syncKitchenMetrics:
     handler: kitchen-svc/sync_kitchen_metrics.handler
+    package:
+      include:
+        - ./** 
     events:
       - eventBridge:
           eventBus: papasqueens-event-bus
@@ -476,6 +501,9 @@ functions:
   # DELIVERY-SVC
   receivePreparedOrder:
     handler: delivery-svc/receive_prepared_order.handler
+    package:
+      include:
+        - ./** 
     events:
       - eventBridge:
           eventBus: papasqueens-event-bus
@@ -483,6 +511,9 @@ functions:
             detail-type: ["Order.Prepared"]
   assignDelivery:
     handler: delivery-svc/assign_delivery.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: delivery/assign
@@ -490,6 +521,9 @@ functions:
           cors: true
   updateDeliveryStatus:
     handler: delivery-svc/update_delivery_status.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: delivery/{id_delivery}/status
@@ -497,6 +531,9 @@ functions:
           cors: true
   handoffOrder:
     handler: delivery-svc/handoff_order.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: delivery/orders/{id_order}/handoff
@@ -504,6 +541,9 @@ functions:
           cors: true
   confirmDelivered:
     handler: delivery-svc/confirm_delivered.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: delivery/orders/{id_order}/delivered
@@ -511,6 +551,9 @@ functions:
           cors: true
   getDeliveryStatus:
     handler: delivery-svc/get_delivery_status.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: delivery/{id_order}
@@ -518,6 +561,9 @@ functions:
           cors: true
   trackRider:
     handler: delivery-svc/track_rider.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: delivery/{id_order}/track
@@ -525,6 +571,9 @@ functions:
           cors: true
   listRiders:
     handler: delivery-svc/list_riders.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: riders
@@ -532,6 +581,9 @@ functions:
           cors: true
   updateRiderStatus:
     handler: delivery-svc/update_rider_status.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: riders/{id_staff}/status
@@ -539,6 +591,9 @@ functions:
           cors: true
   updateRiderLocation:
     handler: delivery-svc/update_rider_location.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: delivery/location
@@ -546,6 +601,9 @@ functions:
           cors: true
   deliveryMetrics:
     handler: delivery-svc/delivery_metrics.handler
+    package:
+      include:
+        - ./** 
     events:
       - eventBridge:
           eventBus: papasqueens-event-bus
@@ -580,11 +638,12 @@ functions:
       - eventBridge:
           eventBus: papasqueens-event-bus
           pattern:
-            detail-type: 
-              - "Staff.Updated"
-              - "Kitchen.MetricsUpdated"
+            detail-type: ["Staff.Updated"]
   getAnalyticsOrders:
     handler: analytics-svc/get_analytics_orders.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: analytics/orders
@@ -592,6 +651,9 @@ functions:
           cors: true
   getAnalyticsEmployees:
     handler: analytics-svc/get_analytics_employees.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: analytics/employees
@@ -599,6 +661,9 @@ functions:
           cors: true
   getAnalyticsDelivery:
     handler: analytics-svc/get_analytics_delivery.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: analytics/delivery
@@ -606,6 +671,9 @@ functions:
           cors: true
   getDashboard:
     handler: analytics-svc/get_dashboard.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: analytics/dashboard
@@ -619,6 +687,9 @@ functions:
   # LOGIN
   userLogin:
     handler: register/login.handler
+    package:
+      include:
+        - ./** 
     events:
       - http:
           path: login

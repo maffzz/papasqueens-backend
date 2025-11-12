@@ -1,6 +1,25 @@
 org: maferlazon
 service: papasqueens-platform
 
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    fileName: requirements.txt
+    slim: true
+    strip: true
+    dockerizePip: true
+
+package:
+  individually: true
+  patterns:
+    - '!**/.git/**'
+    - '!**/__pycache__/**'
+    - '!**/*.pyc'
+    - '!node_modules/**'
+    - requirements.txt
+
 provider:
   name: aws
   runtime: python3.13

@@ -1,9 +1,6 @@
 org: maferlazon
 service: papasqueens-platform
 
-plugins:
-  - serverless-python-requirements
-
 custom:
   pythonRequirements:
     fileName: requirements.txt
@@ -34,7 +31,7 @@ provider:
   memorySize: 1024
   timeout: 30
   layers:
-    - ${self:service}-shared
+    - { Ref: SharedLambdaLayer }
   iam:
     role: arn:aws:iam::850561899873:role/LabRole
   logs:

@@ -250,10 +250,6 @@ resources:
             KeyType: HASH
 
     # EVENTBRIDGE BUS
-    EventBus:
-      Type: AWS::Events::EventBus
-      Properties:
-        Name: papasqueens-event-bus
 
     # STEP FUNCTIONS STATE MACHINE
     OrderWorkflowStateMachine:

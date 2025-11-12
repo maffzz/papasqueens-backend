@@ -263,11 +263,7 @@ resources:
           - AttributeName: id_sucursal
             KeyType: HASH
 
-    # EVENTBRIDGE BUS
-    EventBus:
-      Type: AWS::Events::EventBus
-      Properties:
-        Name: papasqueens-event-bus-${sls:stage}
+    # EVENTBRIDGE BUS managed outside of this stack; using provider.environment.EVENT_BUS
 
     # STEP FUNCTIONS STATE MACHINE
     OrderWorkflowStateMachine:

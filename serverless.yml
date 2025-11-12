@@ -6,6 +6,8 @@ provider:
   runtime: python3.13
   region: us-east-1
   cfnRole: arn:aws:iam::850561899873:role/LabRole
+  iam:
+    role: arn:aws:iam::850561899873:role/LabRole
   logs:
     restApi:
       accessLogging: true

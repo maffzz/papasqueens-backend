@@ -15,7 +15,7 @@ layers:
     path: layers/shared
     name: ${self:service}-shared
     compatibleRuntimes:
-      - python3.13
+      - python3.12
 
 package:
   individually: true
@@ -28,7 +28,7 @@ package:
 
 provider:
   name: aws
-  runtime: python3.13
+  runtime: python3.12
   region: us-east-1
   memorySize: 1024
   timeout: 29

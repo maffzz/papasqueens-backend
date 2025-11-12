@@ -566,6 +566,16 @@ functions:
           path: delivery/{id_delivery}/track
           method: get
           cors: true
+  listDeliveries:
+    handler: delivery-svc/list_deliveries.handler
+    package:
+      include:
+        - ./**
+    events:
+      - http:
+          path: delivery
+          method: get
+          cors: true
   listRiders:
     handler: delivery-svc/list_riders.handler
     package:

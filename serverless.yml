@@ -7,6 +7,7 @@ provider:
   region: us-east-1
   memorySize: 1024
   timeout: 30
+  cfnRole: arn:aws:iam::850561899873:role/LabRole
   iam:
     role: arn:aws:iam::850561899873:role/LabRole
   logs:
@@ -685,6 +686,7 @@ functions:
   # LOGIN
   userLogin:
     handler: register/login.handler
+    timeout: 29
     package:
       include:
         - ./** 

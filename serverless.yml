@@ -7,6 +7,8 @@ custom:
     slim: true
     strip: true
     dockerizePip: true
+  defaultLayers: &defaultLayers
+    - Fn::GetAtt: [SharedLambdaLayer, Arn]
 
 layers:
   shared:
@@ -29,9 +31,7 @@ provider:
   runtime: python3.13
   region: us-east-1
   memorySize: 1024
-  timeout: 30
-  layers:
-    - { Ref: SharedLambdaLayer }
+  timeout: 29
   iam:
     role: arn:aws:iam::850561899873:role/LabRole
   logs:
@@ -347,6 +347,7 @@ functions:
 
   jwtAuthorizer:
     handler: auth/authorizer.handler
+    layers: *defaultLayers
 
   # ORDERS-SVC
   createOrder:
@@ -357,6 +358,7 @@ functions:
           method: post
           cors: true
           authorizer: jwtAuthorizer
+    layers: *defaultLayers
   getOrder:
     handler: orders-svc/get_order.handler
     events:
@@ -367,6 +369,7 @@ functions:
           authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
+    layers: *defaultLayers
   getOrderStatus:
     handler: orders-svc/get_order_status.handler
     events:
@@ -377,6 +380,7 @@ functions:
           authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
+    layers: *defaultLayers
   getCustomerOrders:
     handler: orders-svc/get_customer_orders.handler
     events:
@@ -387,6 +391,7 @@ functions:
           authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
+    layers: *defaultLayers
   cancelOrder:
     handler: orders-svc/cancel_order.handler
     events:
@@ -397,6 +402,7 @@ functions:
           authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
+    layers: *defaultLayers
   handleOrderDelivered:
     handler: orders-svc/handle_order_delivered.handler
     events:
@@ -404,6 +410,7 @@ functions:
           eventBus: ${self:provider.environment.EVENT_BUS}
           pattern:
             detail-type: ["Order.Delivered"]
+    layers: *defaultLayers
   listProducts:
     handler: orders-svc/list_products.handler
     events:
@@ -412,6 +419,7 @@ functions:
           method: get
           cors: true
           authorizer: jwtAuthorizer
+    layers: *defaultLayers
   getProductsByCategory:
     handler: orders-svc/get_products_by_category.handler
     events:
@@ -420,6 +428,7 @@ functions:
           method: get
           cors: true
           authorizer: jwtAuthorizer
+    layers: *defaultLayers
 
   # KITCHEN-SVC
   receiveOrder:
@@ -429,6 +438,7 @@ functions:
           eventBus: ${self:provider.environment.EVENT_BUS}
           pattern:
             detail-type: ["Order.Created"]
+    layers: *defaultLayers
   getKitchenQueue:
     handler: kitchen-svc/get_kitchen_queue.handler
     events:
@@ -439,6 +449,7 @@ functions:
           authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
+    layers: *defaultLayers
   acceptOrder:
     handler: kitchen-svc/accept_order.handler
     events:
@@ -447,6 +458,7 @@ functions:
           method: post
           cors: true
           authorizer: jwtAuthorizer
+    layers: *defaultLayers
   packOrder:
     handler: kitchen-svc/pack_order.handler
     events:
@@ -455,6 +467,7 @@ functions:
           method: post
           cors: true
           authorizer: jwtAuthorizer
+    layers: *defaultLayers
   listMenuItems:
     handler: kitchen-svc/list_menu_items.handler
     events:
@@ -465,6 +478,7 @@ functions:
           authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
+    layers: *defaultLayers
   addMenuItem:
     handler: kitchen-svc/add_menu_item.handler
     events:
@@ -473,6 +487,7 @@ functions:
           method: post
           cors: true
           authorizer: jwtAuthorizer
+    layers: *defaultLayers
   updateMenuItem:
     handler: kitchen-svc/update_menu_item.handler
     events:
@@ -481,6 +496,7 @@ functions:
           method: patch
           cors: true
           authorizer: jwtAuthorizer
+    layers: *defaultLayers
   deleteMenuItem:
     handler: kitchen-svc/delete_menu_item.handler
     events:
@@ -491,6 +507,7 @@ functions:
           authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
+    layers: *defaultLayers
   manageStaff:
     handler: kitchen-svc/manage_staff.handler
     events:
@@ -505,7 +522,8 @@ functions:
           cors: true
           authorizer: jwtAuthorizer
     memorySize: 1536
-    timeout: 30
+    timeout: 29
+    layers: *defaultLayers
   listStaff:
     handler: kitchen-svc/list_staff.handler
     events:
@@ -514,6 +532,7 @@ functions:
           method: get
           cors: true
           authorizer: jwtAuthorizer
+    layers: *defaultLayers
 
   # DELIVERY-SVC
   receivePreparedOrder:
@@ -523,6 +542,7 @@ functions:
           eventBus: ${self:provider.environment.EVENT_BUS}
           pattern:
             detail-type: ["Order.Prepared"]
+    layers: *defaultLayers
   assignDelivery:
     handler: delivery-svc/assign_delivery.handler
     events:
@@ -531,6 +551,7 @@ functions:
           method: post
           cors: true
           authorizer: jwtAuthorizer
+    layers: *defaultLayers
   updateDeliveryStatus:
     handler: delivery-svc/update_delivery_status.handler
     events:
@@ -541,6 +562,7 @@ functions:
           authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
+    layers: *defaultLayers
   confirmDelivered:
     handler: delivery-svc/confirm_delivered.handler
     events:
@@ -549,6 +571,7 @@ functions:
           method: post
           cors: true
           authorizer: jwtAuthorizer
+    layers: *defaultLayers
   getDeliveryStatus:
     handler: delivery-svc/get_delivery_status.handler
     events:
@@ -559,6 +582,7 @@ functions:
           authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
+    layers: *defaultLayers
   listRiders:
     handler: delivery-svc/list_riders.handler
     events:
@@ -569,6 +593,7 @@ functions:
           authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
+    layers: *defaultLayers
   updateRiderStatus:
     handler: delivery-svc/update_rider_status.handler
     events:
@@ -579,6 +604,7 @@ functions:
           authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
+    layers: *defaultLayers
   updateRiderLocation:
     handler: delivery-svc/update_rider_location.handler
     events:
@@ -589,6 +615,7 @@ functions:
           authorizer: jwtAuthorizer
     memorySize: 512
     timeout: 15
+    layers: *defaultLayers
   
 
   # ANALYTICS-SVC
@@ -599,6 +626,7 @@ functions:
           eventBus: ${self:provider.environment.EVENT_BUS}
           pattern:
             detail-type: ["Order.Created"]
+    layers: *defaultLayers
   collectKitchenMetrics:
     handler: analytics-svc/collect_kitchen_metrics.handler
     events:
@@ -606,6 +634,7 @@ functions:
           eventBus: ${self:provider.environment.EVENT_BUS}
           pattern:
             detail-type: ["Order.Prepared"]
+    layers: *defaultLayers
   collectDeliveryMetrics:
     handler: analytics-svc/collect_delivery_metrics.handler
     events:
@@ -613,6 +642,7 @@ functions:
           eventBus: ${self:provider.environment.EVENT_BUS}
           pattern:
             detail-type: ["Order.Delivered"]
+    layers: *defaultLayers
   collectStaffMetrics:
     handler: analytics-svc/collect_staff_metrics.handler
     events:
@@ -622,6 +652,7 @@ functions:
             detail-type: 
               - "Staff.Updated"
               - "Kitchen.MetricsUpdated"
+    layers: *defaultLayers
   orderAssignedConsumer:
     handler: analytics-svc/order_assigned_consumer.handler
     events:
@@ -629,6 +660,7 @@ functions:
           eventBus: ${self:provider.environment.EVENT_BUS}
           pattern:
             detail-type: ["Order.Assigned"]
+    layers: *defaultLayers
   orderCancelledConsumer:
     handler: analytics-svc/order_cancelled_consumer.handler
     events:
@@ -636,6 +668,7 @@ functions:
           eventBus: ${self:provider.environment.EVENT_BUS}
           pattern:
             detail-type: ["Order.Cancelled"]
+    layers: *defaultLayers
   getAnalyticsOrders:
     handler: analytics-svc/get_analytics_orders.handler
     events:
@@ -644,6 +677,7 @@ functions:
           method: get
           cors: true
           authorizer: jwtAuthorizer
+    layers: *defaultLayers
   getAnalyticsEmployees:
     handler: analytics-svc/get_analytics_employees.handler
     events:
@@ -652,6 +686,7 @@ functions:
           method: get
           cors: true
           authorizer: jwtAuthorizer
+    layers: *defaultLayers
   getAnalyticsDelivery:
     handler: analytics-svc/get_analytics_delivery.handler
     events:
@@ -660,6 +695,7 @@ functions:
           method: get
           cors: true
           authorizer: jwtAuthorizer
+    layers: *defaultLayers
   getDashboard:
     handler: analytics-svc/get_dashboard.handler
     events:
@@ -668,12 +704,14 @@ functions:
           method: get
           cors: true
           authorizer: jwtAuthorizer
+    layers: *defaultLayers
   exportAnalyticsReport:
     handler: analytics-svc/export_analytics_report.handler
     events:
       - schedule: rate(1 day)
     memorySize: 2048
     timeout: 120
+    layers: *defaultLayers
 
   # LOGIN
   userLogin:
@@ -685,6 +723,7 @@ functions:
           cors: true
     environment:
       USERS_TABLE: ${self:provider.environment.USERS_TABLE}
+    layers: *defaultLayers
   registerUser:
     handler: orders-svc/register.handler
     events:
@@ -694,3 +733,5 @@ functions:
           cors: true
     environment:
       USERS_TABLE: ${self:provider.environment.USERS_TABLE}
+    timeout: 29
+    layers: *defaultLayers

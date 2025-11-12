@@ -11,8 +11,6 @@ provider:
   iam:
     role: arn:aws:iam::850561899873:role/LabRole
   logs:
-    restApi:
-      accessLogging: true
     frameworkLambda: true
   environment:
     EVENT_BUS: papasqueens-event-bus

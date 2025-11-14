@@ -9,13 +9,20 @@ s3 = boto3.client("s3")
 
 
 def handler(event, context):
+    headers_in = event.get("headers", {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers_in.get("Origin") or headers_in.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,GET",
+        "Content-Type": "application/json",
+    }
+
     try:
-        headers = event.get("headers", {}) or {}
         qs = event.get("queryStringParameters") or {}
-        tenant_id = qs.get("tenant_id") or headers.get("X-Tenant-Id") or headers.get("x-tenant-id")
+        tenant_id = qs.get("tenant_id") or headers_in.get("X-Tenant-Id") or headers_in.get("x-tenant-id")
 
         if not tenant_id:
-            return {"statusCode": 400, "body": json.dumps({"error": "tenant_id requerido"})}
+            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "tenant_id requerido"})}
 
         # pedidos totales
         pedidos = analytics_table.scan(FilterExpression=Attr("tenant_id").eq(tenant_id) & Attr("id_order").ne(None))
@@ -45,6 +52,6 @@ def handler(event, context):
             ContentType="application/json"
         )
 
-        return {"statusCode": 200, "body": json.dumps(resumen)}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(resumen)}
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

@@ -14,10 +14,17 @@ def parse_iso(ts):
         return None
 
 def handler(event, context):
+    headers_in = event.get("headers", {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers_in.get("Origin") or headers_in.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,GET",
+        "Content-Type": "application/json",
+    }
+
     try:
-        headers = event.get("headers", {}) or {}
         qs = event.get("queryStringParameters") or {}
-        tenant_id = headers.get("X-Tenant-Id") or headers.get("x-tenant-id") or qs.get("tenant_id") or "default"
+        tenant_id = headers_in.get("X-Tenant-Id") or headers_in.get("x-tenant-id") or qs.get("tenant_id") or "default"
 
         # Cargar datos por tenant
         o_resp = orders_table.scan(FilterExpression=Attr("tenant_id").eq(tenant_id))
@@ -89,6 +96,6 @@ def handler(event, context):
                 "delivered_by": delivered_by
             }
         }
-        return {"statusCode": 200, "body": json.dumps(result)}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(result)}
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

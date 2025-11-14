@@ -2,6 +2,7 @@ import json, boto3, os, uuid, datetime
 from botocore.exceptions import ClientError
 import base64
 import bcrypt
+from common.jwt_utils import verify_jwt
 
 dynamo = boto3.resource("dynamodb")
 table = dynamo.Table(os.environ["STAFF_TABLE"])
@@ -14,6 +15,16 @@ def hash_password(password):
 
 def manage_staff(event, context):
     try:
+        # Auth: require staff admin
+        headers = event.get("headers", {}) or {}
+        authz = headers.get("Authorization") or headers.get("authorization")
+        if not authz or not authz.lower().startswith("bearer "):
+            return {"statusCode": 401, "body": json.dumps({"error": "No autorizado"})}
+        token = authz.split(" ", 1)[1].strip()
+        claims = verify_jwt(token) or {}
+        if (claims.get("type") != "staff") or (claims.get("role") != "admin"):
+            return {"statusCode": 403, "body": json.dumps({"error": "Requiere rol admin"})}
+
         body = json.loads(event.get("body", "{}"))
         id_staff = body.get("id_staff", str(uuid.uuid4()))
         tenant_id = body["tenant_id"]
@@ -31,6 +42,10 @@ def manage_staff(event, context):
         existing_staff = table.get_item(Key={"id_staff": id_staff}).get("Item")
         is_new = existing_staff is None
         
+        # validate role
+        if role not in ("staff", "delivery", "admin"):
+            return {"statusCode": 400, "body": json.dumps({"error": "Rol inválido"})}
+
         item = {
             "id_staff": id_staff,
             "tenant_id": tenant_id,
@@ -80,6 +95,16 @@ def manage_staff(event, context):
 
 def upload_staff_doc(event, context):
     try:
+        # Auth: require staff admin
+        headers = event.get("headers", {}) or {}
+        authz = headers.get("Authorization") or headers.get("authorization")
+        if not authz or not authz.lower().startswith("bearer "):
+            return {"statusCode": 401, "body": json.dumps({"error": "No autorizado"})}
+        token = authz.split(" ", 1)[1].strip()
+        claims = verify_jwt(token) or {}
+        if (claims.get("type") != "staff") or (claims.get("role") != "admin"):
+            return {"statusCode": 403, "body": json.dumps({"error": "Requiere rol admin"})}
+
         body = json.loads(event.get("body", "{}"))
         id_staff = body["id_staff"]
         tenant_id = body["tenant_id"]

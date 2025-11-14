@@ -1,6 +1,7 @@
 import json, os, boto3
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
+from common.jwt_utils import verify_jwt
 
 dynamo = boto3.resource("dynamodb")
 table = dynamo.Table(os.environ["ORDERS_TABLE"])
@@ -14,6 +15,15 @@ def get_user_info(event):
     user_email = headers.get("X-User-Email") or headers.get("x-user-email")
     user_type = headers.get("X-User-Type") or headers.get("x-user-type")
     user_id = headers.get("X-User-Id") or headers.get("x-user-id")
+    if not (user_email and user_type and user_id):
+        # Intentar JWT en Authorization: Bearer <token>
+        authz = headers.get("Authorization") or headers.get("authorization")
+        if authz and authz.lower().startswith("bearer "):
+            token = authz.split(" ", 1)[1].strip()
+            payload = verify_jwt(token) or {}
+            user_email = user_email or payload.get("email")
+            user_type = (user_type or payload.get("type"))
+            user_id = user_id or payload.get("sub")
     
     if not user_email:
         query_params = event.get("queryStringParameters") or {}
@@ -32,10 +42,11 @@ def check_authorization(user_info, order_item, action="read"):
     if not user_info.get("type"):
         return False, "Información de usuario no proporcionada"
     
-    if user_info.get("type") == "staff":
+    utype = (user_info.get("type") or '').lower()
+    if utype == "staff":
         return True, None
     
-    if user_info.get("type") == "customer":
+    if utype in ("customer", "cliente"):
         order_customer_id = order_item.get("id_customer")
         user_customer_id = user_info.get("id")
         

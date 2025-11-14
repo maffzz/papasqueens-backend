@@ -28,6 +28,7 @@ provider:
     RECEIPTS_BUCKET: papasqueens-orders-receipts
     STAFF_BUCKET: papasqueens-staff-docs
     ANALYTICS_BUCKET: papasqueens-analytics-exports
+    JWT_SECRET: ${env:JWT_SECRET, 'change-me'}
 
   iamRoleStatements:
     - Effect: Allow
@@ -703,15 +704,28 @@ functions:
       - schedule: rate(1 day)
 
   # LOGIN
-  userLogin:
-    handler: register/login.handler
+  staffLogin:
+    handler: register/staff_login.handler
     timeout: 29
     package:
       include:
         - ./** 
     events:
       - http:
-          path: login
+          path: auth/staff/login
+          method: post
+          cors: true
+    environment:
+      STAFF_TABLE: ${self:provider.environment.STAFF_TABLE}
+  customerLogin:
+    handler: register/customer_login.handler
+    timeout: 29
+    package:
+      include:
+        - ./**
+    events:
+      - http:
+          path: auth/customer/login
           method: post
           cors: true
     environment:

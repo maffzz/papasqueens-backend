@@ -1,4 +1,5 @@
 import json, boto3, os, uuid, datetime, base64
+from common.jwt_utils import verify_jwt
 from botocore.exceptions import ClientError
 
 dynamo = boto3.resource("dynamodb")
@@ -7,6 +8,16 @@ s3 = boto3.client("s3")
 
 def handler(event, context):
     try:
+        # Auth: require staff admin
+        headers = event.get("headers", {}) or {}
+        authz = headers.get("Authorization") or headers.get("authorization")
+        if not authz or not authz.lower().startswith("bearer "):
+            return {"statusCode": 401, "body": json.dumps({"error": "No autorizado"})}
+        token = authz.split(" ", 1)[1].strip()
+        claims = verify_jwt(token) or {}
+        if (claims.get("type") != "staff") or (claims.get("role") != "admin"):
+            return {"statusCode": 403, "body": json.dumps({"error": "Requiere rol admin"})}
+
         body = json.loads(event.get("body", "{}"))
         id_producto = str(uuid.uuid4())
         tenant_id = body["tenant_id"]

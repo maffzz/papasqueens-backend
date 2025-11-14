@@ -28,10 +28,14 @@ def handler(event, context):
         if not id_delivery:
             return {"statusCode": 400, "body": json.dumps({"error": "Falta id_delivery o id_order"})}
 
-        # Elegir repartidor: usar el indicado si llega, sino elegir uno disponible
-        if not chosen_staff:
+        # Validar/Seleccionar repartidor con rol delivery
+        if chosen_staff:
+            st = staff_table.get_item(Key={"id_staff": chosen_staff}).get("Item") or {}
+            if (not st) or (st.get("tenant_id") != tenant_id) or (st.get("status") != "activo") or (st.get("role") != "delivery"):
+                return {"statusCode": 400, "body": json.dumps({"error": "id_staff inválido: requiere rol 'delivery' activo y tenant válido"})}
+        else:
             staff_resp = staff_table.scan(
-                FilterExpression=Attr("tenant_id").eq(tenant_id) & Attr("role").eq("repartidor") & Attr("status").eq("activo")
+                FilterExpression=Attr("tenant_id").eq(tenant_id) & Attr("role").eq("delivery") & Attr("status").eq("activo")
             )
             riders = staff_resp.get("Items", [])
             if not riders:

@@ -300,7 +300,16 @@ functions:
       - http:
           path: orders
           method: post
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   getOrder:
     handler: orders-svc/get_order.handler
     package:
@@ -310,7 +319,16 @@ functions:
       - http:
           path: orders/{id_order}
           method: get
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   getOrderStatus:
     handler: orders-svc/get_order_status.handler
     package:
@@ -320,7 +338,16 @@ functions:
       - http:
           path: orders/{id_order}/status
           method: get
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   getCustomerOrders:
     handler: orders-svc/get_customer_orders.handler
     package:
@@ -330,7 +357,16 @@ functions:
       - http:
           path: orders/customer/{id_customer}
           method: get
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   updateOrderStatus:
     handler: orders-svc/update_order_status.handler
     package:
@@ -340,7 +376,16 @@ functions:
       - http:
           path: orders/{id_order}/status
           method: patch
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   cancelOrder:
     handler: orders-svc/cancel_order.handler
     package:
@@ -350,7 +395,16 @@ functions:
       - http:
           path: orders/{id_order}/cancel
           method: post
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   handleOrderDelivered:
     handler: orders-svc/handle_order_delivered.handler
     package:
@@ -382,7 +436,16 @@ functions:
       - http:
           path: kitchen/queue
           method: get
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   acceptOrder:
     handler: kitchen-svc/accept_order.handler
     package:
@@ -392,7 +455,16 @@ functions:
       - http:
           path: kitchen/orders/{order_id}/accept
           method: post
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   packOrder:
     handler: kitchen-svc/pack_order.handler
     package:
@@ -402,7 +474,16 @@ functions:
       - http:
           path: kitchen/orders/{order_id}/pack
           method: post
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   listMenuItems:
     handler: kitchen-svc/list_menu_items.handler
     package:
@@ -412,7 +493,16 @@ functions:
       - http:
           path: menu
           method: get
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   addMenuItem:
     handler: kitchen-svc/add_menu_item.handler
     package:
@@ -422,7 +512,16 @@ functions:
       - http:
           path: menu
           method: post
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   updateMenuItem:
     handler: kitchen-svc/update_menu_item.handler
     package:
@@ -432,7 +531,16 @@ functions:
       - http:
           path: menu/{id_producto}
           method: patch
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   deleteMenuItem:
     handler: kitchen-svc/delete_menu_item.handler
     package:
@@ -442,7 +550,16 @@ functions:
       - http:
           path: menu/{id_producto}
           method: delete
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   manageStaff:
     handler: kitchen-svc/manage_staff.handler
     package:
@@ -452,11 +569,29 @@ functions:
       - http:
           path: staff
           method: post
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
       - http:
           path: staff/{id_staff}
           method: patch
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   listStaff:
     handler: kitchen-svc/list_staff.handler
     package:
@@ -466,7 +601,16 @@ functions:
       - http:
           path: staff
           method: get
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   syncKitchenMetrics:
     handler: kitchen-svc/sync_kitchen_metrics.handler
     package:
@@ -498,7 +642,16 @@ functions:
       - http:
           path: delivery/assign
           method: post
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   updateDeliveryStatus:
     handler: delivery-svc/update_delivery_status.handler
     package:
@@ -508,7 +661,16 @@ functions:
       - http:
           path: delivery/{id_delivery}/status
           method: patch
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   handoffOrder:
     handler: delivery-svc/handoff_order.handler
     package:
@@ -518,7 +680,16 @@ functions:
       - http:
           path: delivery/orders/{id_order}/handoff
           method: post
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   confirmDelivered:
     handler: delivery-svc/confirm_delivered.handler
     package:
@@ -528,7 +699,16 @@ functions:
       - http:
           path: delivery/orders/{id_order}/delivered
           method: post
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   getDeliveryStatus:
     handler: delivery-svc/get_delivery_status.handler
     package:
@@ -538,7 +718,16 @@ functions:
       - http:
           path: delivery/{id_delivery}
           method: get
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   trackRider:
     handler: delivery-svc/track_rider.handler
     package:
@@ -548,7 +737,16 @@ functions:
       - http:
           path: delivery/{id_delivery}/track
           method: get
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   listDeliveries:
     handler: delivery-svc/list_deliveries.handler
     package:
@@ -558,7 +756,16 @@ functions:
       - http:
           path: delivery
           method: get
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   listRiders:
     handler: delivery-svc/list_riders.handler
     package:
@@ -568,7 +775,16 @@ functions:
       - http:
           path: riders
           method: get
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   updateRiderStatus:
     handler: delivery-svc/update_rider_status.handler
     package:
@@ -578,7 +794,16 @@ functions:
       - http:
           path: riders/{id_staff}/status
           method: patch
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   updateRiderLocation:
     handler: delivery-svc/update_rider_location.handler
     package:
@@ -588,7 +813,16 @@ functions:
       - http:
           path: delivery/location
           method: post
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   deliveryMetrics:
     handler: delivery-svc/delivery_metrics.handler
     package:
@@ -638,7 +872,16 @@ functions:
       - http:
           path: analytics/orders
           method: get
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   getAnalyticsEmployees:
     handler: analytics-svc/get_analytics_employees.handler
     package:
@@ -648,7 +891,16 @@ functions:
       - http:
           path: analytics/employees
           method: get
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   getAnalyticsDelivery:
     handler: analytics-svc/get_analytics_delivery.handler
     package:
@@ -658,7 +910,16 @@ functions:
       - http:
           path: analytics/delivery
           method: get
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   getDashboard:
     handler: analytics-svc/get_dashboard.handler
     package:
@@ -668,7 +929,16 @@ functions:
       - http:
           path: analytics/dashboard
           method: get
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   getWorkflowKpis:
     handler: analytics-svc/get_workflow_kpis.handler
     package:
@@ -678,7 +948,16 @@ functions:
       - http:
           path: analytics/workflow-kpis
           method: get
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
   exportAnalyticsReport:
     handler: analytics-svc/export_analytics_report.handler
     events:

@@ -29,10 +29,16 @@ def handler(event, context):
         headers = event.get('headers', {}) or {}
         tenant_id = body.get('tenant_id') or headers.get('X-Tenant-Id') or headers.get('x-tenant-id')
 
+        cors_headers = {
+            "Access-Control-Allow-Origin": headers.get("Origin") or headers.get("origin") or "*",
+            "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+            "Access-Control-Allow-Methods": "OPTIONS,POST",
+        }
+
         if not email or not password:
-            return {"statusCode": 400, "body": json.dumps({"error": "Email y password requeridos"})}
+            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "Email y password requeridos"})}
         if not tenant_id:
-            return {"statusCode": 400, "body": json.dumps({"error": "tenant_id requerido"})}
+            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "tenant_id requerido"})}
 
         resp = users_table.get_item(Key={"tenant_id": tenant_id, "email": email})
         user = resp.get("Item")
@@ -56,9 +62,9 @@ def handler(event, context):
             user = {"tenant_id": tenant_id, "email": email, "id_user": id_user, "type_user": "customer", "name": name, "status": "activo", "id_sucursal": body.get("id_sucursal")}
         else:
             if user.get("status") != "activo":
-                return {"statusCode": 403, "body": json.dumps({"error": "Usuario inactivo"})}
+                return {"statusCode": 403, "headers": cors_headers, "body": json.dumps({"error": "Usuario inactivo"})}
             if not verify_password(password, user.get("password_hash", "")):
-                return {"statusCode": 401, "body": json.dumps({"error": "Credenciales inválidas"})}
+                return {"statusCode": 401, "headers": cors_headers, "body": json.dumps({"error": "Credenciales inválidas"})}
 
         claims = {
             "sub": user.get("id_user", email),
@@ -83,9 +89,9 @@ def handler(event, context):
                 "X-User-Email": email
             }
         }
-        return {"statusCode": 200, "body": json.dumps(payload)}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(payload)}
 
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": f"Error en base de datos: {str(e)}"})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": f"Error en base de datos: {str(e)}"})}
     except Exception as e:
-        return {"statusCode": 500, "body": json.dumps({"error": f"Error inesperado: {str(e)}"})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": f"Error inesperado: {str(e)}"})}

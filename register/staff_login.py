@@ -23,10 +23,16 @@ def handler(event, context):
         password = body.get('password')
         tenant_id = body.get('tenant_id') or headers.get('X-Tenant-Id') or headers.get('x-tenant-id')
 
+        cors_headers = {
+            "Access-Control-Allow-Origin": headers.get("Origin") or headers.get("origin") or "*",
+            "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+            "Access-Control-Allow-Methods": "OPTIONS,POST",
+        }
+
         if not username or not password:
-            return {"statusCode": 400, "body": json.dumps({"error": "Usuario y password requeridos"})}
+            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "Usuario y password requeridos"})}
         if not tenant_id:
-            return {"statusCode": 400, "body": json.dumps({"error": "tenant_id requerido"})}
+            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "tenant_id requerido"})}
 
         # Buscar por email primero; si no, por id_staff
         # Nota: si la tabla staff no tiene índice por email, primero intentamos get por id_staff
@@ -53,13 +59,13 @@ def handler(event, context):
                 staff_item = None
 
         if not staff_item:
-            return {"statusCode": 404, "body": json.dumps({"error": "Staff no encontrado"})}
+            return {"statusCode": 404, "headers": cors_headers, "body": json.dumps({"error": "Staff no encontrado"})}
 
         if staff_item.get("status") and staff_item["status"] != "activo":
-            return {"statusCode": 403, "body": json.dumps({"error": "Usuario inactivo"})}
+            return {"statusCode": 403, "headers": cors_headers, "body": json.dumps({"error": "Usuario inactivo"})}
 
         if not verify_password(password, staff_item.get("password_hash", "")):
-            return {"statusCode": 401, "body": json.dumps({"error": "Credenciales inválidas"})}
+            return {"statusCode": 401, "headers": cors_headers, "body": json.dumps({"error": "Credenciales inválidas"})}
 
         # actualizar last_login
         try:
@@ -93,9 +99,9 @@ def handler(event, context):
                 "X-User-Email": staff_item.get("email") or ""
             }
         }
-        return {"statusCode": 200, "body": json.dumps(payload)}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(payload)}
 
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": f"Error en base de datos: {str(e)}"})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": f"Error en base de datos: {str(e)}"})}
     except Exception as e:
-        return {"statusCode": 500, "body": json.dumps({"error": f"Error inesperado: {str(e)}"})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": f"Error inesperado: {str(e)}"})}

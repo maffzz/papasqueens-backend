@@ -37,6 +37,14 @@ def get_user_info(event):
         "id": user_id
     }
 
+def get_tenant_id(event):
+    headers = event.get("headers", {}) or {}
+    tenant_id = headers.get("X-Tenant-Id") or headers.get("x-tenant-id")
+    if not tenant_id:
+        qs = event.get("queryStringParameters") or {}
+        tenant_id = qs.get("tenant_id")
+    return tenant_id
+
 def check_authorization(user_info, order_item, action="read"):
     """Verifica si el usuario tiene permiso para acceder al pedido"""
     if not user_info.get("type"):
@@ -61,8 +69,11 @@ def handler(event, context):
     order_id = event["pathParameters"]["order_id"]
     try:
         user_info = get_user_info(event)
+        tenant_id = get_tenant_id(event)
+        if not tenant_id:
+            return {"statusCode": 400, "body": json.dumps({"error": "tenant_id requerido"})}
         
-        response = table.get_item(Key={"id_order": order_id})
+        response = table.get_item(Key={"tenant_id": tenant_id, "id_order": order_id})
         item = response.get("Item")
         if not item:
             return {"statusCode": 404, "body": json.dumps({"error": "Pedido no encontrado"})}
@@ -76,9 +87,9 @@ def handler(event, context):
         if item.get("created_at"):
             history.append({"step": "recibido", "at": item.get("created_at"), "by": item.get("id_customer")})
 
-        # Kitchen (clave: order_id)
+        # Kitchen (clave: tenant_id + order_id)
         try:
-            k_resp = kitchen_table.get_item(Key={"order_id": order_id})
+            k_resp = kitchen_table.get_item(Key={"tenant_id": tenant_id, "order_id": order_id})
             k = k_resp.get("Item") or {}
         except Exception:
             k = {}
@@ -88,10 +99,13 @@ def handler(event, context):
             if k.get("packed_at") or k.get("end_time"):
                 history.append({"step": "empacado", "at": k.get("packed_at") or k.get("end_time"), "by": k.get("packed_by")})
 
-        # Delivery (buscar por id_order)
+        # Delivery (buscar por id_order usando índice y filtrando por tenant)
         try:
-            d_scan = delivery_table.scan(FilterExpression=Attr("id_order").eq(order_id))
-            d_items = d_scan.get("Items", [])
+            d_query = delivery_table.query(
+                IndexName="OrderIndex",
+                KeyConditionExpression=Attr("id_order").eq(order_id)
+            )
+            d_items = [x for x in d_query.get("Items", []) if x.get("tenant_id") == tenant_id]
             d = d_items[0] if d_items else {}
         except Exception:
             d = {}

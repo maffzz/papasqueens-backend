@@ -11,17 +11,22 @@ def handler(event, context):
         order_id = event["pathParameters"]["order_id"]
         body = json.loads(event.get("body", "{}"))
         headers = event.get("headers", {}) or {}
+        qs = event.get("queryStringParameters") or {}
         staff_id = body.get("id_staff") or headers.get("X-User-Id") or headers.get("x-user-id")
+        tenant_id = headers.get("X-Tenant-Id") or headers.get("x-tenant-id") or qs.get("tenant_id")
         now = datetime.datetime.utcnow().isoformat()
 
+        if not tenant_id:
+            return {"statusCode": 400, "body": json.dumps({"error": "tenant_id requerido"})}
+
         table.update_item(
-            Key={"order_id": order_id},
+            Key={"tenant_id": tenant_id, "order_id": order_id},
             UpdateExpression="SET #s = :s, end_time = :et, packed_at = :et, packed_by = if_not_exists(packed_by, :by), updated_at = :u",
             ExpressionAttributeNames={"#s": "status"},
             ExpressionAttributeValues={":s": "listo_para_entrega", ":et": now, ":by": staff_id or "unknown", ":u": now}
         )
 
-        resp = table.get_item(Key={"order_id": order_id})
+        resp = table.get_item(Key={"tenant_id": tenant_id, "order_id": order_id})
         pedido = resp.get("Item", {})
         tenant_id = pedido.get("tenant_id", "default")
 

@@ -58,25 +58,21 @@ resources:
         TableName: Orders
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
+          - AttributeName: tenant_id
+            AttributeType: S
           - AttributeName: id_order
             AttributeType: S
           - AttributeName: id_customer
             AttributeType: S
-          - AttributeName: tenant_id
-            AttributeType: S
         KeySchema:
-          - AttributeName: id_order
+          - AttributeName: tenant_id
             KeyType: HASH
+          - AttributeName: id_order
+            KeyType: RANGE
         GlobalSecondaryIndexes:
-          - IndexName: GSI1
+          - IndexName: CustomerIndex
             KeySchema:
               - AttributeName: id_customer
-                KeyType: HASH
-            Projection:
-              ProjectionType: ALL
-          - IndexName: TenantIndex
-            KeySchema:
-              - AttributeName: tenant_id
                 KeyType: HASH
             Projection:
               ProjectionType: ALL
@@ -87,20 +83,15 @@ resources:
         TableName: Kitchen
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
-          - AttributeName: order_id
-            AttributeType: S
           - AttributeName: tenant_id
             AttributeType: S
-        KeySchema:
           - AttributeName: order_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: tenant_id
             KeyType: HASH
-        GlobalSecondaryIndexes:
-          - IndexName: TenantIndex
-            KeySchema:
-              - AttributeName: tenant_id
-                KeyType: HASH
-            Projection:
-              ProjectionType: ALL
+          - AttributeName: order_id
+            KeyType: RANGE
 
     DeliveryTable:
       Type: AWS::DynamoDB::Table
@@ -108,25 +99,21 @@ resources:
         TableName: Delivery
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
+          - AttributeName: tenant_id
+            AttributeType: S
           - AttributeName: id_delivery
             AttributeType: S
           - AttributeName: id_order
             AttributeType: S
-          - AttributeName: tenant_id
-            AttributeType: S
         KeySchema:
-          - AttributeName: id_delivery
+          - AttributeName: tenant_id
             KeyType: HASH
+          - AttributeName: id_delivery
+            KeyType: RANGE
         GlobalSecondaryIndexes:
           - IndexName: OrderIndex
             KeySchema:
               - AttributeName: id_order
-                KeyType: HASH
-            Projection:
-              ProjectionType: ALL
-          - IndexName: TenantIndex
-            KeySchema:
-              - AttributeName: tenant_id
                 KeyType: HASH
             Projection:
               ProjectionType: ALL
@@ -137,22 +124,18 @@ resources:
         TableName: Analytics
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
-          - AttributeName: id_metric
-            AttributeType: S
           - AttributeName: tenant_id
+            AttributeType: S
+          - AttributeName: id_metric
             AttributeType: S
           - AttributeName: id_order
             AttributeType: S
         KeySchema:
-          - AttributeName: id_metric
+          - AttributeName: tenant_id
             KeyType: HASH
+          - AttributeName: id_metric
+            KeyType: RANGE
         GlobalSecondaryIndexes:
-          - IndexName: TenantIndex
-            KeySchema:
-              - AttributeName: tenant_id
-                KeyType: HASH
-            Projection:
-              ProjectionType: ALL
           - IndexName: OrderIndex
             KeySchema:
               - AttributeName: id_order
@@ -166,20 +149,15 @@ resources:
         TableName: Staff
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
-          - AttributeName: id_staff
-            AttributeType: S
           - AttributeName: tenant_id
             AttributeType: S
-        KeySchema:
           - AttributeName: id_staff
+            AttributeType: S
+        KeySchema:
+          - AttributeName: tenant_id
             KeyType: HASH
-        GlobalSecondaryIndexes:
-          - IndexName: TenantIndex
-            KeySchema:
-              - AttributeName: tenant_id
-                KeyType: HASH
-            Projection:
-              ProjectionType: ALL
+          - AttributeName: id_staff
+            KeyType: RANGE
 
     MenuItemsTable:
       Type: AWS::DynamoDB::Table
@@ -187,20 +165,15 @@ resources:
         TableName: MenuItems
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
-          - AttributeName: id_producto
-            AttributeType: S
           - AttributeName: tenant_id
             AttributeType: S
-        KeySchema:
           - AttributeName: id_producto
+            AttributeType: S
+        KeySchema:
+          - AttributeName: tenant_id
             KeyType: HASH
-        GlobalSecondaryIndexes:
-          - IndexName: TenantIndex
-            KeySchema:
-              - AttributeName: tenant_id
-                KeyType: HASH
-            Projection:
-              ProjectionType: ALL
+          - AttributeName: id_producto
+            KeyType: RANGE
 
     UsersTable:
       Type: AWS::DynamoDB::Table
@@ -208,11 +181,15 @@ resources:
         TableName: papasqueens-users
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
+          - AttributeName: tenant_id
+            AttributeType: S
           - AttributeName: email
             AttributeType: S
         KeySchema:
-          - AttributeName: email
+          - AttributeName: tenant_id
             KeyType: HASH
+          - AttributeName: email
+            KeyType: RANGE
 
     # S3 BUCKETS
     MenuImagesBucket:
@@ -248,9 +225,13 @@ resources:
         AttributeDefinitions:
           - AttributeName: tenant_id
             AttributeType: S
+          - AttributeName: id_sucursal
+            AttributeType: S
         KeySchema:
           - AttributeName: tenant_id
             KeyType: HASH
+          - AttributeName: id_sucursal
+            KeyType: RANGE
 
     # EVENTBRIDGE BUS
 

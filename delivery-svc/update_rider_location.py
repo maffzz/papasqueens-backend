@@ -1,5 +1,5 @@
 import json, boto3, os, datetime
-from boto3.dynamodb.conditions import Attr
+from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
 
 dynamo = boto3.resource("dynamodb")
@@ -12,16 +12,24 @@ def handler(event, context):
     """
     try:
         body = json.loads(event.get("body", "{}"))
+        headers = event.get("headers", {}) or {}
+        qs = event.get("queryStringParameters") or {}
         id_order = body.get("id_order")
         lat = body.get("lat")
         lon = body.get("lon")
         id_staff = body.get("id_staff")
+        tenant_id = body.get("tenant_id") or headers.get("X-Tenant-Id") or headers.get("x-tenant-id") or qs.get("tenant_id")
 
         if not id_order or lat is None or lon is None:
             return {"statusCode": 400, "body": json.dumps({"error": "Faltan campos requeridos: id_order, lat, lon"})}
+        if not tenant_id:
+            return {"statusCode": 400, "body": json.dumps({"error": "tenant_id requerido"})}
         
-        resp = delivery_table.scan(FilterExpression=Attr("id_order").eq(id_order))
-        items = resp.get("Items", [])
+        resp = delivery_table.query(
+            IndexName="OrderIndex",
+            KeyConditionExpression=Key("id_order").eq(id_order)
+        )
+        items = [x for x in resp.get("Items", []) if x.get("tenant_id") == tenant_id]
         
         if not items:
             return {"statusCode": 404, "body": json.dumps({"error": "No se encontró la entrega"})}
@@ -45,7 +53,7 @@ def handler(event, context):
         }
         
         delivery_table.update_item(
-            Key={"id_delivery": id_delivery},
+            Key={"tenant_id": tenant_id, "id_delivery": id_delivery},
             UpdateExpression="SET last_location = :loc, updated_at = :u",
             ExpressionAttributeValues={
                 ":loc": last_location,

@@ -18,18 +18,16 @@ def handler(event, context):
         if new_status not in ["asignado", "en_camino", "entregado"]:
             return {"statusCode": 400, "body": json.dumps({"error": "Estado inválido"})}
 
-        delivery_resp = delivery_table.get_item(Key={"id_delivery": id_delivery})
+        delivery_resp = delivery_table.get_item(Key={"tenant_id": tenant_id, "id_delivery": id_delivery})
         if not delivery_resp.get("Item"):
             return {"statusCode": 404, "body": json.dumps({"error": "Entrega no encontrada"})}
         
         delivery = delivery_resp["Item"]
-        if delivery.get("tenant_id") != tenant_id:
-            return {"statusCode": 404, "body": json.dumps({"error": "Entrega no pertenece al tenant"})}
         id_order = delivery.get("id_order")
         
         now = datetime.datetime.utcnow().isoformat()
         delivery_table.update_item(
-            Key={"id_delivery": id_delivery},
+            Key={"tenant_id": tenant_id, "id_delivery": id_delivery},
             UpdateExpression="SET #s = :s, status_by = :by, updated_at = :u",
             ExpressionAttributeNames={"#s": "status"},
             ExpressionAttributeValues={":s": new_status, ":by": actor or "unknown", ":u": now}
@@ -38,9 +36,9 @@ def handler(event, context):
         event_type = "Order.EnRoute" if new_status == "en_camino" else "Order.Delivered" if new_status == "entregado" else "Delivery.Updated"
         
         if event_type == "Order.Delivered" and id_order:
-            event_detail = {"id_order": id_order, "id_delivery": id_delivery, "status": new_status}
+            event_detail = {"tenant_id": tenant_id, "id_order": id_order, "id_delivery": id_delivery, "status": new_status}
         else:
-            event_detail = {"id_delivery": id_delivery, "status": new_status}
+            event_detail = {"tenant_id": tenant_id, "id_delivery": id_delivery, "status": new_status}
 
         eb.put_events(
             Entries=[

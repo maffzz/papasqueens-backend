@@ -1,6 +1,6 @@
 import json, boto3, os, datetime, base64, uuid
 from botocore.exceptions import ClientError
-from boto3.dynamodb.conditions import Attr
+from boto3.dynamodb.conditions import Attr, Key
 
 dynamo = boto3.resource("dynamodb")
 delivery_table = dynamo.Table(os.environ["DELIVERY_TABLE"])
@@ -17,15 +17,16 @@ def handler(event, context):
         tenant_id = body.get("tenant_id") or headers.get("X-Tenant-Id") or headers.get("x-tenant-id") or qs.get("tenant_id") or "default"
         staff_id = body.get("id_staff") or headers.get("X-User-Id") or headers.get("x-user-id")
 
-        resp = delivery_table.scan(FilterExpression=boto3.dynamodb.conditions.Attr("id_order").eq(id_order) & Attr("tenant_id").eq(tenant_id))
-        items = resp.get("Items", [])
+        resp = delivery_table.query(
+            IndexName="OrderIndex",
+            KeyConditionExpression=Key("id_order").eq(id_order)
+        )
+        items = [x for x in resp.get("Items", []) if x.get("tenant_id") == tenant_id]
         if not items:
             return {"statusCode": 404, "body": json.dumps({"error": "Entrega no encontrada"})}
 
         delivery = items[0]
         id_delivery = delivery["id_delivery"]
-        if delivery.get("tenant_id") != tenant_id:
-            return {"statusCode": 404, "body": json.dumps({"error": "Entrega no pertenece al tenant"})}
         now = datetime.datetime.utcnow().isoformat()
         proof_url = None
 
@@ -36,7 +37,7 @@ def handler(event, context):
             proof_url = f"https://{os.environ['PROOF_BUCKET']}.s3.amazonaws.com/{key}"
 
         delivery_table.update_item(
-            Key={"id_delivery": id_delivery},
+            Key={"tenant_id": tenant_id, "id_delivery": id_delivery},
             UpdateExpression="SET status=:s, tiempo_llegada=:t, delivered_by=:by, proof_url=:p, updated_at=:u",
             ExpressionAttributeValues={":s": "entregado", ":t": now, ":by": staff_id or delivery.get('id_staff', 'unknown'), ":p": proof_url, ":u": now}
         )
@@ -46,7 +47,7 @@ def handler(event, context):
                 {
                     "Source": "delivery-svc",
                     "DetailType": "Order.Delivered",
-                    "Detail": json.dumps({"id_order": id_order, "id_delivery": id_delivery, "proof_url": proof_url}),
+                    "Detail": json.dumps({"tenant_id": tenant_id, "id_order": id_order, "id_delivery": id_delivery, "proof_url": proof_url}),
                     "EventBusName": os.environ["EVENT_BUS"]
                 }
             ]

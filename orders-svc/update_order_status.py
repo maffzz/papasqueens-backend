@@ -21,6 +21,14 @@ def get_user_info(event):
         "id": user_id
     }
 
+def get_tenant_id(event):
+    headers = event.get("headers", {}) or {}
+    tenant_id = headers.get("X-Tenant-Id") or headers.get("x-tenant-id")
+    if not tenant_id:
+        qs = event.get("queryStringParameters") or {}
+        tenant_id = qs.get("tenant_id")
+    return tenant_id
+
 def handler(event, context):
     order_id = event["pathParameters"]["order_id"]
     body = json.loads(event.get("body", "{}"))
@@ -34,13 +42,17 @@ def handler(event, context):
         if user_info.get("type") != "staff":
             return {"statusCode": 403, "body": json.dumps({"error": "Solo el personal autorizado puede actualizar el estado del pedido"})}
         
-        order_resp = table.get_item(Key={"id_order": order_id})
+        tenant_id = get_tenant_id(event)
+        if not tenant_id:
+            return {"statusCode": 400, "body": json.dumps({"error": "tenant_id requerido"})}
+        
+        order_resp = table.get_item(Key={"tenant_id": tenant_id, "id_order": order_id})
         if not order_resp.get("Item"):
             return {"statusCode": 404, "body": json.dumps({"error": "Pedido no encontrado"})}
         
         now = datetime.datetime.utcnow().isoformat()
         table.update_item(
-            Key={"id_order": order_id},
+            Key={"tenant_id": tenant_id, "id_order": order_id},
             UpdateExpression="SET #s = :s, updated_at = :u",
             ExpressionAttributeNames={"#s": "status"},
             ExpressionAttributeValues={":s": new_status, ":u": now}
@@ -51,7 +63,7 @@ def handler(event, context):
                 {
                     "Source": "orders-svc",
                     "DetailType": "Order.Updated",
-                    "Detail": json.dumps({"id_order": order_id, "new_status": new_status}),
+                    "Detail": json.dumps({"tenant_id": tenant_id, "id_order": order_id, "new_status": new_status}),
                     "EventBusName": os.environ["EVENT_BUS"]
                 }
             ]

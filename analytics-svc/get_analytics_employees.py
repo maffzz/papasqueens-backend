@@ -1,14 +1,24 @@
 import json, boto3, os
-from boto3.dynamodb.conditions import Attr
+from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
 
 dynamo = boto3.resource("dynamodb")
 analytics_table = dynamo.Table(os.environ["ANALYTICS_TABLE"])
 
+
 def handler(event, context):
     try:
-        tenant_id = event["queryStringParameters"]["tenant_id"]
-        resp = analytics_table.scan(FilterExpression=Attr("tenant_id").eq(tenant_id) & Attr("id_staff").ne(None))
+        headers = event.get("headers", {}) or {}
+        qs = event.get("queryStringParameters") or {}
+        tenant_id = qs.get("tenant_id") or headers.get("X-Tenant-Id") or headers.get("x-tenant-id")
+
+        if not tenant_id:
+            return {"statusCode": 400, "body": json.dumps({"error": "tenant_id requerido"})}
+
+        resp = analytics_table.query(
+            KeyConditionExpression=Key("tenant_id").eq(tenant_id),
+            FilterExpression=Attr("id_staff").ne(None)
+        )
         items = resp.get("Items", [])
 
         metrics = {}

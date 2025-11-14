@@ -1,5 +1,5 @@
 import json, boto3, os, datetime
-from boto3.dynamodb.conditions import Attr
+from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
 
 dynamo = boto3.resource("dynamodb")
@@ -17,10 +17,13 @@ def handler(event, context):
         tenant_id = body.get("tenant_id") or headers.get("X-Tenant-Id") or headers.get("x-tenant-id") or qs.get("tenant_id") or "default"
         chosen_staff = body.get("id_staff")
 
-        # Resolver id_delivery a partir de id_order si no llega directamente
+        # Resolver id_delivery a partir de id_order si no llega directamente, usando GSI OrderIndex
         if not id_delivery and id_order:
-            resp = delivery_table.scan(FilterExpression=Attr("id_order").eq(id_order) & Attr("tenant_id").eq(tenant_id))
-            items = resp.get("Items", [])
+            resp = delivery_table.query(
+                IndexName="OrderIndex",
+                KeyConditionExpression=Key("id_order").eq(id_order)
+            )
+            items = [x for x in resp.get("Items", []) if x.get("tenant_id") == tenant_id]
             if not items:
                 return {"statusCode": 404, "body": json.dumps({"error": "Entrega no encontrada para el pedido"})}
             id_delivery = items[0]["id_delivery"]
@@ -30,8 +33,8 @@ def handler(event, context):
 
         # Validar/Seleccionar repartidor con rol delivery
         if chosen_staff:
-            st = staff_table.get_item(Key={"id_staff": chosen_staff}).get("Item") or {}
-            if (not st) or (st.get("tenant_id") != tenant_id) or (st.get("status") != "activo") or (st.get("role") != "delivery"):
+            st = staff_table.get_item(Key={"tenant_id": tenant_id, "id_staff": chosen_staff}).get("Item") or {}
+            if (not st) or (st.get("status") != "activo") or (st.get("role") != "delivery"):
                 return {"statusCode": 400, "body": json.dumps({"error": "id_staff inválido: requiere rol 'delivery' activo y tenant válido"})}
         else:
             staff_resp = staff_table.scan(
@@ -43,14 +46,14 @@ def handler(event, context):
             chosen_staff = riders[0]["id_staff"]
 
         # Validar tenant del delivery
-        d_item = delivery_table.get_item(Key={"id_delivery": id_delivery}).get("Item")
-        if not d_item or d_item.get("tenant_id") != tenant_id:
+        d_item = delivery_table.get_item(Key={"tenant_id": tenant_id, "id_delivery": id_delivery}).get("Item")
+        if not d_item:
             return {"statusCode": 404, "body": json.dumps({"error": "Entrega no encontrada para el tenant"})}
 
         now = datetime.datetime.utcnow().isoformat()
 
         delivery_table.update_item(
-            Key={"id_delivery": id_delivery},
+            Key={"tenant_id": tenant_id, "id_delivery": id_delivery},
             UpdateExpression="SET id_staff=:s, status=:st, assigned_at=:a, updated_at=:u",
             ExpressionAttributeValues={
                 ":s": chosen_staff,
@@ -65,7 +68,7 @@ def handler(event, context):
                 {
                     "Source": "delivery-svc",
                     "DetailType": "Order.Assigned",
-                    "Detail": json.dumps({"id_delivery": id_delivery, "id_staff": chosen_staff}),
+                    "Detail": json.dumps({"tenant_id": tenant_id, "id_delivery": id_delivery, "id_staff": chosen_staff}),
                     "EventBusName": os.environ["EVENT_BUS"]
                 }
             ]

@@ -26,12 +26,15 @@ def handler(event, context):
         email = body.get('email')
         password = body.get('password')
         name = body.get('name', '')
-        tenant_id = body.get('tenant_id') or event.get('headers', {}).get('X-Tenant-Id') or event.get('headers', {}).get('x-tenant-id')
+        headers = event.get('headers', {}) or {}
+        tenant_id = body.get('tenant_id') or headers.get('X-Tenant-Id') or headers.get('x-tenant-id')
 
         if not email or not password:
             return {"statusCode": 400, "body": json.dumps({"error": "Email y password requeridos"})}
+        if not tenant_id:
+            return {"statusCode": 400, "body": json.dumps({"error": "tenant_id requerido"})}
 
-        resp = users_table.get_item(Key={"email": email})
+        resp = users_table.get_item(Key={"tenant_id": tenant_id, "email": email})
         user = resp.get("Item")
 
         now = datetime.datetime.utcnow().isoformat()
@@ -39,6 +42,7 @@ def handler(event, context):
             # Registrar cliente
             id_user = str(uuid.uuid4())
             users_table.put_item(Item={
+                "tenant_id": tenant_id,
                 "email": email,
                 "id_user": id_user,
                 "type_user": "customer",
@@ -49,7 +53,7 @@ def handler(event, context):
                 "created_at": now,
                 "updated_at": now
             })
-            user = {"email": email, "id_user": id_user, "type_user": "customer", "name": name, "status": "activo", "id_sucursal": body.get("id_sucursal")}
+            user = {"tenant_id": tenant_id, "email": email, "id_user": id_user, "type_user": "customer", "name": name, "status": "activo", "id_sucursal": body.get("id_sucursal")}
         else:
             if user.get("status") != "activo":
                 return {"statusCode": 403, "body": json.dumps({"error": "Usuario inactivo"})}
@@ -60,6 +64,7 @@ def handler(event, context):
             "sub": user.get("id_user", email),
             "email": email,
             "type": "customer",
+            "tenant_id": user.get("tenant_id") or tenant_id,
         }
         token = sign_jwt(claims, exp_seconds=86400)
 
@@ -71,6 +76,7 @@ def handler(event, context):
             "type_user": "customer",
             "name": user.get("name", ""),
             "id_sucursal": user.get("id_sucursal"),
+            "tenant_id": user.get("tenant_id") or tenant_id,
             "headers_required": {
                 "X-User-Id": user.get("id_user", email),
                 "X-User-Type": "customer",

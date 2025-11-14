@@ -1,5 +1,5 @@
 import json, os, boto3
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 
 dynamo = boto3.resource("dynamodb")
@@ -24,35 +24,52 @@ def get_user_info(event):
         "id": user_id
     }
 
+def get_tenant_id(event):
+    headers = event.get("headers", {}) or {}
+    tenant_id = headers.get("X-Tenant-Id") or headers.get("x-tenant-id")
+    if not tenant_id:
+        qs = event.get("queryStringParameters") or {}
+        tenant_id = qs.get("tenant_id")
+    return tenant_id
+
 def handler(event, context):
     try:
         user_info = get_user_info(event)
+        tenant_id = get_tenant_id(event)
         
         if not user_info.get("type"):
             return {"statusCode": 401, "body": json.dumps({"error": "Información de usuario no proporcionada"})}
         
-        if user_info.get("type") == "staff":
-            tenant_id = event.get("queryStringParameters", {}).get("tenant_id")
+        utype = (user_info.get("type") or '').lower()
+        
+        # Staff: si especifica tenant_id, solo órdenes de ese tenant; si no, todas (multi-tenant admin)
+        if utype == "staff":
             if tenant_id:
-                from boto3.dynamodb.conditions import Attr
-                resp = table.scan(FilterExpression=Attr("tenant_id").eq(tenant_id))
+                resp = table.query(
+                    KeyConditionExpression=Key("tenant_id").eq(tenant_id)
+                )
             else:
                 resp = table.scan()
             return {"statusCode": 200, "body": json.dumps(resp.get("Items", []))}
         
-        if user_info.get("type") == "customer":
+        # Customer: requiere id_customer y tenant_id; usamos GSI por cliente y filtramos por tenant
+        if utype == "customer":
             id_customer = user_info.get("id")
             if not id_customer:
-                id_customer = event["pathParameters"].get("id_customer")
+                path_params = event.get("pathParameters") or {}
+                id_customer = path_params.get("id_customer")
             
             if not id_customer:
                 return {"statusCode": 400, "body": json.dumps({"error": "ID de cliente no proporcionado"})}
+            if not tenant_id:
+                return {"statusCode": 400, "body": json.dumps({"error": "tenant_id requerido"})}
             
             resp = table.query(
-                IndexName="GSI1",
+                IndexName="CustomerIndex",
                 KeyConditionExpression=Key("id_customer").eq(id_customer)
             )
-            return {"statusCode": 200, "body": json.dumps(resp.get("Items", []))}
+            items = [x for x in resp.get("Items", []) if x.get("tenant_id") == tenant_id]
+            return {"statusCode": 200, "body": json.dumps(items)}
         
         return {"statusCode": 403, "body": json.dumps({"error": "Tipo de usuario no válido"})}
     except ClientError as e:

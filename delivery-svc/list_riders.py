@@ -7,7 +7,13 @@ staff_table = dynamo.Table(os.environ["STAFF_TABLE"])
 
 def handler(event, context):
     try:
-        tenant_id = event["queryStringParameters"]["tenant_id"]
+        headers = event.get("headers", {}) or {}
+        qs = event.get("queryStringParameters") or {}
+        tenant_id = qs.get("tenant_id") or headers.get("X-Tenant-Id") or headers.get("x-tenant-id")
+
+        if not tenant_id:
+            return {"statusCode": 400, "body": json.dumps({"error": "tenant_id requerido"})}
+
         resp = staff_table.scan(
             FilterExpression=Attr("tenant_id").eq(tenant_id) & Attr("role").eq("repartidor")
         )

@@ -5,6 +5,7 @@ from botocore.exceptions import ClientError
 dynamo = boto3.resource("dynamodb")
 table = dynamo.Table(os.environ["MENU_TABLE"])
 
+
 def handler(event, context):
     try:
         # Auth: require staff admin
@@ -18,8 +19,19 @@ def handler(event, context):
             return {"statusCode": 403, "body": json.dumps({"error": "Requiere rol admin"})}
 
         id_producto = event["pathParameters"]["id_producto"]
+
+        headers = event.get("headers", {}) or {}
+        tenant_id = headers.get("X-Tenant-Id") or headers.get("x-tenant-id")
+
+        if not tenant_id:
+            qs = event.get("queryStringParameters") or {}
+            tenant_id = qs.get("tenant_id")
+
+        if not tenant_id:
+            return {"statusCode": 400, "body": json.dumps({"error": "tenant_id requerido"})}
+
         table.update_item(
-            Key={"id_producto": id_producto},
+            Key={"tenant_id": tenant_id, "id_producto": id_producto},
             UpdateExpression="SET available = :a",
             ExpressionAttributeValues={":a": False}
         )

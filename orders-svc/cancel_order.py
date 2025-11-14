@@ -21,12 +21,21 @@ def get_user_info(event):
         "id": user_id
     }
 
+def get_tenant_id(event):
+    headers = event.get("headers", {}) or {}
+    tenant_id = headers.get("X-Tenant-Id") or headers.get("x-tenant-id")
+    if not tenant_id:
+        qs = event.get("queryStringParameters") or {}
+        tenant_id = qs.get("tenant_id")
+    return tenant_id
+
 def handler(event, context):
     order_id = event["pathParameters"]["order_id"]
     try:
         user_info = get_user_info(event)
+        tenant_id = get_tenant_id(event)
         
-        order_resp = table.get_item(Key={"id_order": order_id})
+        order_resp = table.get_item(Key={"tenant_id": tenant_id, "id_order": order_id})
         order_item = order_resp.get("Item")
         if not order_item:
             return {"statusCode": 404, "body": json.dumps({"error": "Pedido no encontrado"})}
@@ -45,7 +54,7 @@ def handler(event, context):
         
         now = datetime.datetime.utcnow().isoformat()
         table.update_item(
-            Key={"id_order": order_id},
+            Key={"tenant_id": tenant_id, "id_order": order_id},
             UpdateExpression="SET #s=:s, updated_at=:u",
             ExpressionAttributeNames={"#s": "status"},
             ExpressionAttributeValues={":s": "cancelado", ":u": now}
@@ -55,7 +64,7 @@ def handler(event, context):
                 {
                     "Source": "orders-svc",
                     "DetailType": "Order.Cancelled",
-                    "Detail": json.dumps({"id_order": order_id}),
+                    "Detail": json.dumps({"tenant_id": tenant_id, "id_order": order_id}),
                     "EventBusName": os.environ["EVENT_BUS"]
                 }
             ]

@@ -9,12 +9,17 @@ def handler(event, context):
     try:
         body = json.loads(event.get("body", "{}"))
         headers = event.get("headers", {}) or {}
+        qs = event.get("queryStringParameters") or {}
         order_id = event["pathParameters"]["order_id"]
         staff_id = body.get("id_staff") or headers.get("X-User-Id") or headers.get("x-user-id")
+        tenant_id = headers.get("X-Tenant-Id") or headers.get("x-tenant-id") or qs.get("tenant_id")
+
+        if not tenant_id:
+            return {"statusCode": 400, "body": json.dumps({"error": "tenant_id requerido"})}
 
         now = datetime.datetime.utcnow().isoformat()
         table.update_item(
-            Key={"order_id": order_id},
+            Key={"tenant_id": tenant_id, "order_id": order_id},
             UpdateExpression="SET #s = :s, list_id_staff = list_append(if_not_exists(list_id_staff, :empty), :sid), start_time = :st, accepted_by = :by, accepted_at = :st, updated_at = :u",
             ExpressionAttributeNames={"#s": "status"},
             ExpressionAttributeValues={
@@ -32,7 +37,7 @@ def handler(event, context):
                 {
                     "Source": "kitchen-svc",
                     "DetailType": "Order.Updated",
-                    "Detail": json.dumps({"order_id": order_id, "status": "en_preparacion"}),
+                    "Detail": json.dumps({"order_id": order_id, "tenant_id": tenant_id, "status": "en_preparacion"}),
                     "EventBusName": os.environ["EVENT_BUS"]
                 }
             ]

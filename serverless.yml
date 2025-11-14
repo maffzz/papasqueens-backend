@@ -695,7 +695,16 @@ functions:
       - http:
           path: auth/staff/login
           method: post
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
     environment:
       STAFF_TABLE: ${self:provider.environment.STAFF_TABLE}
   customerLogin:
@@ -708,6 +717,15 @@ functions:
       - http:
           path: auth/customer/login
           method: post
-          cors: true
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
     environment:
       USERS_TABLE: ${self:provider.environment.USERS_TABLE}

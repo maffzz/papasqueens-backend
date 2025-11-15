@@ -36,11 +36,13 @@ def get_log_context(event=None, context=None, extra_data=None):
     }
     
     if context:
+        # Usar getattr para evitar fallos si alguna propiedad no existe en el contexto
         context_data.update({
-            "request_id": context.aws_request_id,
-            "function_name": context.function_name,
-            "function_version": context.function_version,
-            "memory_limit": context.memory_limit_mb,
+            "request_id": getattr(context, "aws_request_id", None),
+            "function_name": getattr(context, "function_name", None),
+            "function_version": getattr(context, "function_version", None),
+            # En AWS Lambda el atributo estándar es memory_limit_in_mb; hacemos fallback si no está
+            "memory_limit": getattr(context, "memory_limit_in_mb", getattr(context, "memory_limit_mb", None)),
         })
     
     if event:

@@ -1,9 +1,21 @@
 import json, boto3, os
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key
+from decimal import Decimal
 
 dynamo = boto3.resource("dynamodb")
 table = dynamo.Table(os.environ["MENU_TABLE"])
+
+
+def _convert_decimals(obj):
+    if isinstance(obj, list):
+        return [_convert_decimals(x) for x in obj]
+    if isinstance(obj, dict):
+        return {k: _convert_decimals(v) for k, v in obj.items()}
+    if isinstance(obj, Decimal):
+        # Convert DynamoDB Decimal to float for JSON serialization
+        return float(obj)
+    return obj
 
 
 def handler(event, context):
@@ -28,6 +40,8 @@ def handler(event, context):
         resp = table.query(
             KeyConditionExpression=Key("tenant_id").eq(tenant_id)
         )
-        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(resp.get("Items", []))}
+        items = resp.get("Items", [])
+        safe_items = _convert_decimals(items)
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(safe_items)}
     except ClientError as e:
         return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

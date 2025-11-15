@@ -60,8 +60,12 @@ def handler(event, context):
         "Content-Type": "application/json",
     }
 
-    order_id = event["pathParameters"]["order_id"]
     try:
+        # En serverless.yml el path es orders/{id_order}/status, por lo que el pathParameter correcto es id_order
+        path_params = event.get("pathParameters") or {}
+        order_id = path_params.get("id_order") or path_params.get("order_id")
+        if not order_id:
+            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "id_order requerido en la ruta"})}
         user_info = get_user_info(event)
         tenant_id = get_tenant_id(event)
         if not tenant_id:

@@ -30,25 +30,33 @@ def get_tenant_id(event):
     return tenant_id
 
 def handler(event, context):
+    headers_in = event.get("headers", {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers_in.get("Origin") or headers_in.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,PATCH",
+        "Content-Type": "application/json",
+    }
+
     order_id = event["pathParameters"]["order_id"]
     body = json.loads(event.get("body", "{}"))
     new_status = body.get("status")
 
     if new_status not in ["en_preparacion","listo_para_entrega","en_camino","entregado"]:
-        return {"statusCode": 400, "body": json.dumps({"error": "Estado no válido"})}
+        return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "Estado no válido"})}
 
     try:
         user_info = get_user_info(event)
         if user_info.get("type") != "staff":
-            return {"statusCode": 403, "body": json.dumps({"error": "Solo el personal autorizado puede actualizar el estado del pedido"})}
+            return {"statusCode": 403, "headers": cors_headers, "body": json.dumps({"error": "Solo el personal autorizado puede actualizar el estado del pedido"})}
         
         tenant_id = get_tenant_id(event)
         if not tenant_id:
-            return {"statusCode": 400, "body": json.dumps({"error": "tenant_id requerido"})}
+            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "tenant_id requerido"})}
         
         order_resp = table.get_item(Key={"tenant_id": tenant_id, "id_order": order_id})
         if not order_resp.get("Item"):
-            return {"statusCode": 404, "body": json.dumps({"error": "Pedido no encontrado"})}
+            return {"statusCode": 404, "headers": cors_headers, "body": json.dumps({"error": "Pedido no encontrado"})}
         
         now = datetime.datetime.utcnow().isoformat()
         table.update_item(
@@ -68,6 +76,6 @@ def handler(event, context):
                 }
             ]
         )
-        return {"statusCode": 200, "body": json.dumps({"message": "Estado actualizado"})}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps({"message": "Estado actualizado"})}
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

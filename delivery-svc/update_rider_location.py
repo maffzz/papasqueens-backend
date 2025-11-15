@@ -6,10 +6,15 @@ dynamo = boto3.resource("dynamodb")
 delivery_table = dynamo.Table(os.environ["DELIVERY_TABLE"])
 
 def handler(event, context):
-    """
-    Actualiza la última ubicación GPS del repartidor para un delivery en_camino.
-    Esta función debe ser llamada periódicamente desde la app móvil del repartidor.
-    """
+    """Actualiza la última ubicación GPS del repartidor para un delivery en_camino."""
+    headers_in = event.get("headers", {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers_in.get("Origin") or headers_in.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,POST",
+        "Content-Type": "application/json",
+    }
+
     try:
         body = json.loads(event.get("body", "{}"))
         headers = event.get("headers", {}) or {}
@@ -21,9 +26,9 @@ def handler(event, context):
         tenant_id = body.get("tenant_id") or headers.get("X-Tenant-Id") or headers.get("x-tenant-id") or qs.get("tenant_id")
 
         if not id_order or lat is None or lon is None:
-            return {"statusCode": 400, "body": json.dumps({"error": "Faltan campos requeridos: id_order, lat, lon"})}
+            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "Faltan campos requeridos: id_order, lat, lon"})}
         if not tenant_id:
-            return {"statusCode": 400, "body": json.dumps({"error": "tenant_id requerido"})}
+            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "tenant_id requerido"})}
         
         resp = delivery_table.query(
             IndexName="OrderIndex",
@@ -32,16 +37,16 @@ def handler(event, context):
         items = [x for x in resp.get("Items", []) if x.get("tenant_id") == tenant_id]
         
         if not items:
-            return {"statusCode": 404, "body": json.dumps({"error": "No se encontró la entrega"})}
+            return {"statusCode": 404, "headers": cors_headers, "body": json.dumps({"error": "No se encontró la entrega"})}
         
         delivery = items[0]
         delivery_status = delivery.get("status", "")
         
         if delivery_status != "en_camino":
-            return {"statusCode": 400, "body": json.dumps({"error": f"El delivery no está en_camino (estado actual: {delivery_status})"})}
+            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": f"El delivery no está en_camino (estado actual: {delivery_status})"})}
         
         if id_staff and delivery.get("id_staff") != id_staff:
-            return {"statusCode": 403, "body": json.dumps({"error": "No tienes permiso para actualizar esta entrega"})}
+            return {"statusCode": 403, "headers": cors_headers, "body": json.dumps({"error": "No tienes permiso para actualizar esta entrega"})}
         
         id_delivery = delivery["id_delivery"]
         now = datetime.datetime.utcnow().isoformat()
@@ -63,6 +68,7 @@ def handler(event, context):
         
         return {
             "statusCode": 200,
+            "headers": cors_headers,
             "body": json.dumps({
                 "message": "Ubicación actualizada",
                 "id_delivery": id_delivery,
@@ -70,6 +76,6 @@ def handler(event, context):
             })
         }
     except ValueError as e:
-        return {"statusCode": 400, "body": json.dumps({"error": f"Coordenadas inválidas: {e}"})}
+        return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": f"Coordenadas inválidas: {e}"})}
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

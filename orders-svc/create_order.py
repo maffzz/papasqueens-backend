@@ -26,6 +26,14 @@ def get_user_info(event):
     }
 
 def handler(event, context):
+    headers_in = event.get("headers", {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers_in.get("Origin") or headers_in.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,POST",
+        "Content-Type": "application/json",
+    }
+
     try:
         log_info("Iniciando creación de pedido", event, context)
         
@@ -37,7 +45,7 @@ def handler(event, context):
 
         if not list_id_products:
             log_error("Intento de crear pedido sin productos", None, event, context, {"id_customer": id_customer})
-            return {"statusCode": 400, "body": json.dumps({"error": "Debe incluir productos"})}
+            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "Debe incluir productos"})}
         
         if user_info.get("type") == "customer":
             if id_customer != user_info.get("id"):
@@ -45,7 +53,7 @@ def handler(event, context):
                     "id_customer_requested": id_customer,
                     "id_customer_authenticated": user_info.get("id")
                 })
-                return {"statusCode": 403, "body": json.dumps({"error": "Solo puedes crear pedidos para tu propia cuenta"})}
+                return {"statusCode": 403, "headers": cors_headers, "body": json.dumps({"error": "Solo puedes crear pedidos para tu propia cuenta"})}
 
         order_id = str(uuid.uuid4())
         now = datetime.datetime.utcnow().isoformat()
@@ -99,14 +107,14 @@ def handler(event, context):
             log_error("Fallo al iniciar Step Functions", e, event, context, {"order_id": order_id})
 
         log_info("Pedido creado exitosamente", event, context, {"order_id": order_id})
-        return {"statusCode": 201, "body": json.dumps({"id_order": order_id, "status": "recibido"})}
+        return {"statusCode": 201, "headers": cors_headers, "body": json.dumps({"id_order": order_id, "status": "recibido"})}
 
     except KeyError as e:
         log_error(f"Campo faltante en request: {e}", e, event, context)
-        return {"statusCode": 400, "body": json.dumps({"error": f"Campo faltante: {e}"})}
+        return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": f"Campo faltante: {e}"})}
     except ClientError as e:
         log_error("Error de DynamoDB al crear pedido", e, event, context)
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}
     except Exception as e:
         log_error("Error inesperado al crear pedido", e, event, context)
-        return {"statusCode": 500, "body": json.dumps({"error": "Error interno del servidor"})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": "Error interno del servidor"})}

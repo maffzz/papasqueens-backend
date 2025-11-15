@@ -66,21 +66,29 @@ def check_authorization(user_info, order_item, action="read"):
     return False, "Tipo de usuario no válido"
 
 def handler(event, context):
+    headers_in = event.get("headers", {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers_in.get("Origin") or headers_in.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,GET",
+        "Content-Type": "application/json",
+    }
+
     order_id = event["pathParameters"]["order_id"]
     try:
         user_info = get_user_info(event)
         tenant_id = get_tenant_id(event)
         if not tenant_id:
-            return {"statusCode": 400, "body": json.dumps({"error": "tenant_id requerido"})}
+            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "tenant_id requerido"})}
         
         response = table.get_item(Key={"tenant_id": tenant_id, "id_order": order_id})
         item = response.get("Item")
         if not item:
-            return {"statusCode": 404, "body": json.dumps({"error": "Pedido no encontrado"})}
+            return {"statusCode": 404, "headers": cors_headers, "body": json.dumps({"error": "Pedido no encontrado"})}
         
         authorized, error_msg = check_authorization(user_info, item)
         if not authorized:
-            return {"statusCode": 403, "body": json.dumps({"error": error_msg})}
+            return {"statusCode": 403, "headers": cors_headers, "body": json.dumps({"error": error_msg})}
         
         # Construir historial a partir de Kitchen y Delivery
         history = []
@@ -120,6 +128,6 @@ def handler(event, context):
         payload = dict(item)
         payload["workflow"] = {"kitchen": k, "delivery": d}
         payload["history"] = history
-        return {"statusCode": 200, "body": json.dumps(payload)}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(payload)}
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

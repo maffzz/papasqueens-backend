@@ -7,16 +7,24 @@ table = dynamo.Table(os.environ["MENU_TABLE"])
 s3 = boto3.client("s3")
 
 def handler(event, context):
+    headers_in = event.get("headers", {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers_in.get("Origin") or headers_in.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,POST",
+        "Content-Type": "application/json",
+    }
+
     try:
         # Auth: require staff admin
         headers = event.get("headers", {}) or {}
         authz = headers.get("Authorization") or headers.get("authorization")
         if not authz or not authz.lower().startswith("bearer "):
-            return {"statusCode": 401, "body": json.dumps({"error": "No autorizado"})}
+            return {"statusCode": 401, "headers": cors_headers, "body": json.dumps({"error": "No autorizado"})}
         token = authz.split(" ", 1)[1].strip()
         claims = verify_jwt(token) or {}
         if (claims.get("type") != "staff") or (claims.get("role") != "admin"):
-            return {"statusCode": 403, "body": json.dumps({"error": "Requiere rol admin"})}
+            return {"statusCode": 403, "headers": cors_headers, "body": json.dumps({"error": "Requiere rol admin"})}
 
         body = json.loads(event.get("body", "{}"))
         id_producto = str(uuid.uuid4())
@@ -47,9 +55,9 @@ def handler(event, context):
             "updated_at": now
         }
         table.put_item(Item=item)
-        return {"statusCode": 201, "body": json.dumps({"message": "Producto agregado", "id_producto": id_producto})}
+        return {"statusCode": 201, "headers": cors_headers, "body": json.dumps({"message": "Producto agregado", "id_producto": id_producto})}
 
     except KeyError as e:
-        return {"statusCode": 400, "body": json.dumps({"error": f"Campo faltante: {e}"})}
+        return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": f"Campo faltante: {e}"})}
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

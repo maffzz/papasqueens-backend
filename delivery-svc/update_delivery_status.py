@@ -6,6 +6,14 @@ delivery_table = dynamo.Table(os.environ["DELIVERY_TABLE"])
 eb = boto3.client("events")
 
 def handler(event, context):
+    headers_in = event.get("headers", {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers_in.get("Origin") or headers_in.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,PATCH",
+        "Content-Type": "application/json",
+    }
+
     try:
         headers = event.get("headers", {}) or {}
         qs = event.get("queryStringParameters") or {}
@@ -16,11 +24,11 @@ def handler(event, context):
         actor = body.get("id_staff") or headers.get("X-User-Id") or headers.get("x-user-id")
 
         if new_status not in ["asignado", "en_camino", "entregado"]:
-            return {"statusCode": 400, "body": json.dumps({"error": "Estado inválido"})}
+            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "Estado inválido"})}
 
         delivery_resp = delivery_table.get_item(Key={"tenant_id": tenant_id, "id_delivery": id_delivery})
         if not delivery_resp.get("Item"):
-            return {"statusCode": 404, "body": json.dumps({"error": "Entrega no encontrada"})}
+            return {"statusCode": 404, "headers": cors_headers, "body": json.dumps({"error": "Entrega no encontrada"})}
         
         delivery = delivery_resp["Item"]
         id_order = delivery.get("id_order")
@@ -51,8 +59,8 @@ def handler(event, context):
             ]
         )
 
-        return {"statusCode": 200, "body": json.dumps({"message": f"Estado actualizado a {new_status}"})}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps({"message": f"Estado actualizado a {new_status}"})}
     except KeyError as e:
-        return {"statusCode": 400, "body": json.dumps({"error": f"Campo faltante: {e}"})}
+        return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": f"Campo faltante: {e}"})}
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

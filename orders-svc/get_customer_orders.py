@@ -33,12 +33,20 @@ def get_tenant_id(event):
     return tenant_id
 
 def handler(event, context):
+    headers_in = event.get("headers", {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers_in.get("Origin") or headers_in.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,GET",
+        "Content-Type": "application/json",
+    }
+
     try:
         user_info = get_user_info(event)
         tenant_id = get_tenant_id(event)
         
         if not user_info.get("type"):
-            return {"statusCode": 401, "body": json.dumps({"error": "Información de usuario no proporcionada"})}
+            return {"statusCode": 401, "headers": cors_headers, "body": json.dumps({"error": "Información de usuario no proporcionada"})}
         
         utype = (user_info.get("type") or '').lower()
         
@@ -50,7 +58,7 @@ def handler(event, context):
                 )
             else:
                 resp = table.scan()
-            return {"statusCode": 200, "body": json.dumps(resp.get("Items", []))}
+            return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(resp.get("Items", []))}
         
         # Customer: requiere id_customer y tenant_id; usamos GSI por cliente y filtramos por tenant
         if utype == "customer":
@@ -60,17 +68,17 @@ def handler(event, context):
                 id_customer = path_params.get("id_customer")
             
             if not id_customer:
-                return {"statusCode": 400, "body": json.dumps({"error": "ID de cliente no proporcionado"})}
+                return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "ID de cliente no proporcionado"})}
             if not tenant_id:
-                return {"statusCode": 400, "body": json.dumps({"error": "tenant_id requerido"})}
+                return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "tenant_id requerido"})}
             
             resp = table.query(
                 IndexName="CustomerIndex",
                 KeyConditionExpression=Key("id_customer").eq(id_customer)
             )
             items = [x for x in resp.get("Items", []) if x.get("tenant_id") == tenant_id]
-            return {"statusCode": 200, "body": json.dumps(items)}
+            return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(items)}
         
-        return {"statusCode": 403, "body": json.dumps({"error": "Tipo de usuario no válido"})}
+        return {"statusCode": 403, "headers": cors_headers, "body": json.dumps({"error": "Tipo de usuario no válido"})}
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

@@ -24,20 +24,28 @@ def get_user_info(event):
     }
 
 def handler(event, context):
+    headers_in = event.get("headers", {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers_in.get("Origin") or headers_in.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,GET",
+        "Content-Type": "application/json",
+    }
+
     try:
         user_info = get_user_info(event)
         
         if not user_info.get("type"):
-            return {"statusCode": 401, "body": json.dumps({"error": "Información de usuario no proporcionada"})}
+            return {"statusCode": 401, "headers": cors_headers, "body": json.dumps({"error": "Información de usuario no proporcionada"})}
         
         if user_info.get("type") == "staff":
             resp = table.scan()
-            return {"statusCode": 200, "body": json.dumps(resp.get("Items", []))}
+            return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(resp.get("Items", []))}
         
         if user_info.get("type") == "customer":
             resp = table.scan(FilterExpression=Attr("available").eq(True))
-            return {"statusCode": 200, "body": json.dumps(resp.get("Items", []))}
+            return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(resp.get("Items", []))}
         
-        return {"statusCode": 403, "body": json.dumps({"error": "Tipo de usuario no válido"})}
+        return {"statusCode": 403, "headers": cors_headers, "body": json.dumps({"error": "Tipo de usuario no válido"})}
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

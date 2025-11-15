@@ -30,6 +30,14 @@ def get_tenant_id(event):
     return tenant_id
 
 def handler(event, context):
+    headers_in = event.get("headers", {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers_in.get("Origin") or headers_in.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,POST",
+        "Content-Type": "application/json",
+    }
+
     order_id = event["pathParameters"]["order_id"]
     try:
         user_info = get_user_info(event)
@@ -38,19 +46,19 @@ def handler(event, context):
         order_resp = table.get_item(Key={"tenant_id": tenant_id, "id_order": order_id})
         order_item = order_resp.get("Item")
         if not order_item:
-            return {"statusCode": 404, "body": json.dumps({"error": "Pedido no encontrado"})}
+            return {"statusCode": 404, "headers": cors_headers, "body": json.dumps({"error": "Pedido no encontrado"})}
         
         if user_info.get("type") == "staff":
             pass
         elif user_info.get("type") == "customer":
             if order_item.get("id_customer") != user_info.get("id"):
-                return {"statusCode": 403, "body": json.dumps({"error": "Solo puedes cancelar tus propios pedidos"})}
+                return {"statusCode": 403, "headers": cors_headers, "body": json.dumps({"error": "Solo puedes cancelar tus propios pedidos"})}
         else:
-            return {"statusCode": 401, "body": json.dumps({"error": "Información de usuario no válida"})}
+            return {"statusCode": 401, "headers": cors_headers, "body": json.dumps({"error": "Información de usuario no válida"})}
         
         current_status = order_item.get("status")
         if current_status in ["en_preparacion", "listo_para_entrega", "en_camino", "entregado"]:
-            return {"statusCode": 400, "body": json.dumps({"error": "No se puede cancelar un pedido que ya está en preparación o más avanzado"})}
+            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "No se puede cancelar un pedido que ya está en preparación o más avanzado"})}
         
         now = datetime.datetime.utcnow().isoformat()
         table.update_item(
@@ -69,6 +77,6 @@ def handler(event, context):
                 }
             ]
         )
-        return {"statusCode": 200, "body": json.dumps({"message": "Pedido cancelado"})}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps({"message": "Pedido cancelado"})}
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

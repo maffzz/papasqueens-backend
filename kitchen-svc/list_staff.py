@@ -21,8 +21,9 @@ def handler(event, context):
         if not tenant_id:
             return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "tenant_id requerido"})}
 
+        # La tabla Staff tiene como clave de partición tenant_id, así que podemos
+        # consultar directamente sin usar un índice secundario.
         resp = table.query(
-            IndexName="TenantIndex",
             KeyConditionExpression=Key("tenant_id").eq(tenant_id)
         )
         return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(resp.get("Items", []))}

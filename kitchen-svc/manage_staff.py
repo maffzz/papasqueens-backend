@@ -9,21 +9,33 @@ table = dynamo.Table(os.environ["STAFF_TABLE"])
 eb = boto3.client("events")
 s3 = boto3.client("s3")
 
+def _cors(event):
+    headers_in = event.get("headers", {}) or {}
+    return {
+        "Access-Control-Allow-Origin": headers_in.get("Origin") or headers_in.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,GET,POST,PATCH",
+        "Content-Type": "application/json",
+    }
+
+
 def hash_password(password):
     salt = bcrypt.gensalt()
     return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
+
 def manage_staff(event, context):
+    cors_headers = _cors(event)
     try:
         # Auth: require staff admin
         headers = event.get("headers", {}) or {}
         authz = headers.get("Authorization") or headers.get("authorization")
         if not authz or not authz.lower().startswith("bearer "):
-            return {"statusCode": 401, "body": json.dumps({"error": "No autorizado"})}
+            return {"statusCode": 401, "headers": cors_headers, "body": json.dumps({"error": "No autorizado"})}
         token = authz.split(" ", 1)[1].strip()
         claims = verify_jwt(token) or {}
         if (claims.get("type") != "staff") or (claims.get("role") != "admin"):
-            return {"statusCode": 403, "body": json.dumps({"error": "Requiere rol admin"})}
+            return {"statusCode": 403, "headers": cors_headers, "body": json.dumps({"error": "Requiere rol admin"})}
 
         body = json.loads(event.get("body", "{}"))
         id_staff = body.get("id_staff", str(uuid.uuid4()))
@@ -44,7 +56,7 @@ def manage_staff(event, context):
         
         # validate role
         if role not in ("staff", "delivery", "admin"):
-            return {"statusCode": 400, "body": json.dumps({"error": "Rol inválido"})}
+            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "Rol inválido"})}
 
         item = {
             "id_staff": id_staff,
@@ -87,23 +99,25 @@ def manage_staff(event, context):
             ]
         )
 
-        return {"statusCode": 200, "body": json.dumps({"message": "Staff actualizado", "id_staff": id_staff})}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps({"message": "Staff actualizado", "id_staff": id_staff})}
     except KeyError as e:
-        return {"statusCode": 400, "body": json.dumps({"error": f"Campo faltante: {e}"})}
+        return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": f"Campo faltante: {e}"})}
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}
+
 
 def upload_staff_doc(event, context):
+    cors_headers = _cors(event)
     try:
         # Auth: require staff admin
         headers = event.get("headers", {}) or {}
         authz = headers.get("Authorization") or headers.get("authorization")
         if not authz or not authz.lower().startswith("bearer "):
-            return {"statusCode": 401, "body": json.dumps({"error": "No autorizado"})}
+            return {"statusCode": 401, "headers": cors_headers, "body": json.dumps({"error": "No autorizado"})}
         token = authz.split(" ", 1)[1].strip()
         claims = verify_jwt(token) or {}
         if (claims.get("type") != "staff") or (claims.get("role") != "admin"):
-            return {"statusCode": 403, "body": json.dumps({"error": "Requiere rol admin"})}
+            return {"statusCode": 403, "headers": cors_headers, "body": json.dumps({"error": "Requiere rol admin"})}
 
         body = json.loads(event.get("body", "{}"))
         id_staff = body["id_staff"]
@@ -121,20 +135,22 @@ def upload_staff_doc(event, context):
             UpdateExpression="SET profile_url = :url",
             ExpressionAttributeValues={":url": profile_url}
         )
-        return {"statusCode": 200, "body": json.dumps({"profile_url": profile_url})}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps({"profile_url": profile_url})}
     except Exception as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}
+
 
 def get_staff_doc(event, context):
+    cors_headers = _cors(event)
     try:
         id_staff = event["queryStringParameters"]["id_staff"]
         resp = table.get_item(Key={"id_staff": id_staff})
         item = resp.get("Item")
         if not item or not item.get("profile_url"):
-            return {"statusCode": 404, "body": json.dumps({"error": "No se encontró el documento de staff"})}
-        return {"statusCode": 200, "body": json.dumps({"profile_url": item["profile_url"]})}
+            return {"statusCode": 404, "headers": cors_headers, "body": json.dumps({"error": "No se encontró el documento de staff"})}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps({"profile_url": item["profile_url"]})}
     except Exception as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}
 
 def handler(event, context):
     path = event.get("resource", "")

@@ -8,6 +8,14 @@ eb = boto3.client("events")
 s3 = boto3.client("s3")
 
 def handler(event, context):
+    headers_in = event.get("headers", {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers_in.get("Origin") or headers_in.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,POST",
+        "Content-Type": "application/json",
+    }
+
     try:
         id_order = event["pathParameters"]["id_order"]
         body = json.loads(event.get("body", "{}"))
@@ -23,7 +31,7 @@ def handler(event, context):
         )
         items = [x for x in resp.get("Items", []) if x.get("tenant_id") == tenant_id]
         if not items:
-            return {"statusCode": 404, "body": json.dumps({"error": "Entrega no encontrada"})}
+            return {"statusCode": 404, "headers": cors_headers, "body": json.dumps({"error": "Entrega no encontrada"})}
 
         delivery = items[0]
         id_delivery = delivery["id_delivery"]
@@ -52,6 +60,6 @@ def handler(event, context):
                 }
             ]
         )
-        return {"statusCode": 200, "body": json.dumps({"message": "Entrega confirmada", "proof_url": proof_url})}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps({"message": "Entrega confirmada", "proof_url": proof_url})}
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

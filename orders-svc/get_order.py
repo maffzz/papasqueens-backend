@@ -74,7 +74,10 @@ def handler(event, context):
         "Content-Type": "application/json",
     }
 
-    order_id = event["pathParameters"]["order_id"]
+    # En serverless.yml la ruta está definida como orders/{id_order},
+    # por lo que el parámetro de path se llama id_order, no order_id.
+    path_params = event.get("pathParameters") or {}
+    order_id = path_params.get("id_order")
     try:
         user_info = get_user_info(event)
         tenant_id = get_tenant_id(event)

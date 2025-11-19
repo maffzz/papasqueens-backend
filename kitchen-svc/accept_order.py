@@ -15,7 +15,10 @@ def handler(event, context):
     }
 
     try:
-        body = json.loads(event.get("body", "{}"))
+        raw_body = event.get("body")
+        if not raw_body:
+            raw_body = "{}"
+        body = json.loads(raw_body)
         headers = event.get("headers", {}) or {}
         qs = event.get("queryStringParameters") or {}
         order_id = event["pathParameters"]["order_id"]

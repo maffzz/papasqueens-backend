@@ -44,10 +44,20 @@ def handler(event, context):
         id_customer = body["id_customer"]
         list_id_products = body["list_id_products"]
         items = body.get("items") or []
+        delivery_address = body.get("delivery_address") or body.get("address") or body.get("direccion")
 
         if not list_id_products:
             log_error("Intento de crear pedido sin productos", None, event, context, {"id_customer": id_customer})
             return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "Debe incluir productos"})}
+
+        # Validar que los clientes tengan dirección de entrega registrada
+        if (user_info.get("type") or "").lower() == "customer":
+            if not delivery_address or not str(delivery_address).strip():
+                log_error("Cliente intenta crear pedido sin direccion", None, event, context, {
+                    "id_customer": id_customer,
+                    "tenant_id": tenant_id,
+                })
+                return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "Direccion de entrega requerida"})}
         
         if user_info.get("type") == "customer":
             if id_customer != user_info.get("id"):
@@ -69,6 +79,8 @@ def handler(event, context):
             "created_at": now,
             "updated_at": now,
         }
+        if delivery_address:
+            item["delivery_address"] = delivery_address
         if items:
             normalized_items = []
             for it in items:

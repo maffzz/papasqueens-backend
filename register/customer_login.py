@@ -26,6 +26,8 @@ def handler(event, context):
         email = body.get('email')
         password = body.get('password')
         name = body.get('name', '')
+        address = body.get('address') or body.get('direccion') or ''
+        phone = body.get('phone') or ''
         headers = event.get('headers', {}) or {}
         tenant_id = body.get('tenant_id') or headers.get('X-Tenant-Id') or headers.get('x-tenant-id')
 
@@ -56,10 +58,22 @@ def handler(event, context):
                 "name": name,
                 "status": "activo",
                 "id_sucursal": body.get("id_sucursal"),
+                "address": address,
+                "phone": phone,
                 "created_at": now,
                 "updated_at": now
             })
-            user = {"tenant_id": tenant_id, "email": email, "id_user": id_user, "type_user": "customer", "name": name, "status": "activo", "id_sucursal": body.get("id_sucursal")}
+            user = {
+                "tenant_id": tenant_id,
+                "email": email,
+                "id_user": id_user,
+                "type_user": "customer",
+                "name": name,
+                "status": "activo",
+                "id_sucursal": body.get("id_sucursal"),
+                "address": address,
+                "phone": phone,
+            }
         else:
             if user.get("status") != "activo":
                 return {"statusCode": 403, "headers": cors_headers, "body": json.dumps({"error": "Usuario inactivo"})}
@@ -83,6 +97,8 @@ def handler(event, context):
             "name": user.get("name", ""),
             "id_sucursal": user.get("id_sucursal"),
             "tenant_id": user.get("tenant_id") or tenant_id,
+            "address": user.get("address", ""),
+            "phone": user.get("phone", ""),
             "headers_required": {
                 "X-User-Id": user.get("id_user", email),
                 "X-User-Type": "customer",

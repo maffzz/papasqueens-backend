@@ -415,6 +415,28 @@ functions:
           eventBus: papasqueens-event-bus
           pattern:
             detail-type: ["Order.Delivered"]
+  updateCustomerProfile:
+    handler: orders-svc/update_customer_profile.handler
+    timeout: 29
+    package:
+      include:
+        - ./**
+    events:
+      - http:
+          path: auth/customer/profile
+          method: patch
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type
+              - X-Tenant-Id
+              - X-User-Id
+              - X-User-Email
+              - X-User-Type
+              - Authorization
+    environment:
+      USERS_TABLE: ${self:provider.environment.USERS_TABLE}
 
   # KITCHEN-SVC
   receiveOrder:

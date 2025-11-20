@@ -1,4 +1,5 @@
 import json, os, boto3
+from decimal import Decimal
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
 from common.jwt_utils import verify_jwt
@@ -44,6 +45,19 @@ def get_tenant_id(event):
         qs = event.get("queryStringParameters") or {}
         tenant_id = qs.get("tenant_id")
     return tenant_id
+
+def to_serializable(obj):
+    """Convierte Decimals y estructuras anidadas a tipos JSON-serializables."""
+    if isinstance(obj, Decimal):
+        try:
+            return float(obj)
+        except Exception:
+            return int(obj)
+    if isinstance(obj, dict):
+        return {k: to_serializable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple, set)):
+        return [to_serializable(v) for v in obj]
+    return obj
 
 def check_authorization(user_info, order_item, action="read"):
     """Verifica si el usuario tiene permiso para acceder al pedido"""
@@ -131,6 +145,6 @@ def handler(event, context):
         payload = dict(item)
         payload["workflow"] = {"kitchen": k, "delivery": d}
         payload["history"] = history
-        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(payload)}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(to_serializable(payload))}
     except ClientError as e:
         return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

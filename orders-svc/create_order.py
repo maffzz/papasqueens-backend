@@ -1,4 +1,5 @@
 import json, uuid, os, datetime
+from decimal import Decimal
 import boto3
 from botocore.exceptions import ClientError
 import sys
@@ -69,7 +70,20 @@ def handler(event, context):
             "updated_at": now,
         }
         if items:
-            item["items"] = items
+            normalized_items = []
+            for it in items:
+                if not isinstance(it, dict):
+                    continue
+                ni = dict(it)
+                if "precio" in ni and not isinstance(ni["precio"], Decimal):
+                    try:
+                        ni["precio"] = Decimal(str(ni["precio"]))
+                    except Exception:
+                        # Si no se puede convertir, lo dejamos como está para no romper todo el pedido
+                        pass
+                normalized_items.append(ni)
+            if normalized_items:
+                item["items"] = normalized_items
 
         log_info("Guardando pedido en DynamoDB", event, context, {"order_id": order_id, "tenant_id": tenant_id})
         table.put_item(Item=item)

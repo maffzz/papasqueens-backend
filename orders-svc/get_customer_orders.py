@@ -1,4 +1,5 @@
 import json, os, boto3
+from decimal import Decimal
 from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 
@@ -32,6 +33,19 @@ def get_tenant_id(event):
         tenant_id = qs.get("tenant_id")
     return tenant_id
 
+def to_serializable(obj):
+    """Convierte Decimals y estructuras anidadas a tipos JSON-serializables."""
+    if isinstance(obj, Decimal):
+        try:
+            return float(obj)
+        except Exception:
+            return int(obj)
+    if isinstance(obj, dict):
+        return {k: to_serializable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple, set)):
+        return [to_serializable(v) for v in obj]
+    return obj
+
 def handler(event, context):
     headers_in = event.get("headers", {}) or {}
     cors_headers = {
@@ -58,7 +72,8 @@ def handler(event, context):
                 )
             else:
                 resp = table.scan()
-            return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(resp.get("Items", []))}
+            items = resp.get("Items", [])
+            return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(to_serializable(items))}
         
         # Customer: requiere id_customer y tenant_id; usamos GSI por cliente y filtramos por tenant
         if utype == "customer":
@@ -77,7 +92,7 @@ def handler(event, context):
                 KeyConditionExpression=Key("id_customer").eq(id_customer)
             )
             items = [x for x in resp.get("Items", []) if x.get("tenant_id") == tenant_id]
-            return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(items)}
+            return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(to_serializable(items))}
         
         return {"statusCode": 403, "headers": cors_headers, "body": json.dumps({"error": "Tipo de usuario no válido"})}
     except ClientError as e:

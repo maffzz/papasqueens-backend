@@ -7,9 +7,9 @@ provider:
   region: us-east-1
   memorySize: 1024
   timeout: 30
-  cfnRole: arn:aws:iam::850561899873:role/LabRole
+  cfnRole: arn:aws:iam::039871617247:role/LabRole
   iam:
-    role: arn:aws:iam::850561899873:role/LabRole
+    role: arn:aws:iam::039871617247:role/LabRole
   logs:
     frameworkLambda: true
   environment:

@@ -240,7 +240,7 @@ resources:
       Type: AWS::StepFunctions::StateMachine
       Properties:
         StateMachineName: papasqueens-order-workflow
-        RoleArn: arn:aws:iam::850561899873:role/LabRole
+        RoleArn: arn:aws:iam::039871617247:role/LabRole
         DefinitionString:
           Fn::Sub:
             - |

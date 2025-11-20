@@ -42,6 +42,7 @@ def handler(event, context):
         tenant_id = body["tenant_id"]
         id_customer = body["id_customer"]
         list_id_products = body["list_id_products"]
+        items = body.get("items") or []
 
         if not list_id_products:
             log_error("Intento de crear pedido sin productos", None, event, context, {"id_customer": id_customer})
@@ -65,8 +66,10 @@ def handler(event, context):
             "list_id_products": list_id_products,
             "status": "recibido",
             "created_at": now,
-            "updated_at": now
+            "updated_at": now,
         }
+        if items:
+            item["items"] = items
 
         log_info("Guardando pedido en DynamoDB", event, context, {"order_id": order_id, "tenant_id": tenant_id})
         table.put_item(Item=item)

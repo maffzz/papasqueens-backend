@@ -196,6 +196,11 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: papasqueens-menu-images
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
 
     DeliveryProofBucket:
       Type: AWS::S3::Bucket
@@ -216,6 +221,19 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: papasqueens-analytics-exports
+
+    MenuImagesBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: papasqueens-menu-images
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Sid: AllowPublicRead
+              Effect: Allow
+              Principal: "*"
+              Action: s3:GetObject
+              Resource: arn:aws:s3:::papasqueens-menu-images/*
 
     SucursalTable:
       Type: AWS::DynamoDB::Table

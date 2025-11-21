@@ -3,6 +3,7 @@ from botocore.exceptions import ClientError
 
 dynamo = boto3.resource("dynamodb")
 table = dynamo.Table(os.environ["KITCHEN_TABLE"])
+orders_table = dynamo.Table(os.environ["ORDERS_TABLE"])
 eb = boto3.client("events")
 
 def handler(event, context):
@@ -39,9 +40,21 @@ def handler(event, context):
                 ":empty": [],
                 ":st": now,
                 ":by": staff_id,
-                ":u": now
-            }
+                ":u": now,
+            },
         )
+
+        # Mantener sincronizada la tabla Orders con el estado de cocina
+        try:
+            orders_table.update_item(
+                Key={"tenant_id": tenant_id, "id_order": order_id},
+                UpdateExpression="SET #s = :s, updated_at = :u",
+                ExpressionAttributeNames={"#s": "status"},
+                ExpressionAttributeValues={":s": "en_preparacion", ":u": now},
+            )
+        except Exception:
+            # No rompemos el flujo de cocina si fallara esta actualización
+            pass
 
         eb.put_events(
             Entries=[

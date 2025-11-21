@@ -4,6 +4,7 @@ from boto3.dynamodb.conditions import Attr, Key
 
 dynamo = boto3.resource("dynamodb")
 delivery_table = dynamo.Table(os.environ["DELIVERY_TABLE"])
+orders_table = dynamo.Table(os.environ["ORDERS_TABLE"])
 eb = boto3.client("events")
 s3 = boto3.client("s3")
 
@@ -46,9 +47,28 @@ def handler(event, context):
 
         delivery_table.update_item(
             Key={"tenant_id": tenant_id, "id_delivery": id_delivery},
-            UpdateExpression="SET status=:s, tiempo_llegada=:t, delivered_by=:by, proof_url=:p, updated_at=:u",
-            ExpressionAttributeValues={":s": "entregado", ":t": now, ":by": staff_id or delivery.get('id_staff', 'unknown'), ":p": proof_url, ":u": now}
+            UpdateExpression="SET #s=:s, tiempo_llegada=:t, delivered_by=:by, proof_url=:p, updated_at=:u",
+            ExpressionAttributeNames={"#s": "status"},
+            ExpressionAttributeValues={
+                ":s": "entregado",
+                ":t": now,
+                ":by": staff_id or delivery.get("id_staff", "unknown"),
+                ":p": proof_url,
+                ":u": now,
+            },
         )
+
+        # Mantener sincronizado el pedido principal en Orders
+        try:
+            orders_table.update_item(
+                Key={"tenant_id": tenant_id, "id_order": id_order},
+                UpdateExpression="SET #s = :s, updated_at = :u",
+                ExpressionAttributeNames={"#s": "status"},
+                ExpressionAttributeValues={":s": "entregado", ":u": now},
+            )
+        except Exception:
+            # No rompemos el flujo si la actualización de Orders falla por alguna razón
+            pass
 
         eb.put_events(
             Entries=[

@@ -23,8 +23,13 @@ def handler(event, context):
         if not tenant_id:
             return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "tenant_id requerido"})}
 
+        # Soportar tanto el rol antiguo 'repartidor' como el nuevo 'delivery',
+        # y filtrar solo personal activo.
         resp = staff_table.scan(
-            FilterExpression=Attr("tenant_id").eq(tenant_id) & Attr("role").eq("repartidor")
+            FilterExpression=
+                Attr("tenant_id").eq(tenant_id)
+                & Attr("role").is_in(["repartidor", "delivery"])
+                & Attr("status").eq("activo")
         )
         return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(resp.get("Items", []))}
     except ClientError as e:

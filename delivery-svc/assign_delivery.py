@@ -62,13 +62,14 @@ def handler(event, context):
 
         delivery_table.update_item(
             Key={"tenant_id": tenant_id, "id_delivery": id_delivery},
-            UpdateExpression="SET id_staff=:s, status=:st, assigned_at=:a, updated_at=:u",
+            UpdateExpression="SET id_staff=:s, #s=:st, assigned_at=:a, updated_at=:u",
+            ExpressionAttributeNames={"#s": "status"},
             ExpressionAttributeValues={
                 ":s": chosen_staff,
                 ":st": "asignado",
                 ":a": now,
-                ":u": now
-            }
+                ":u": now,
+            },
         )
 
         eb.put_events(

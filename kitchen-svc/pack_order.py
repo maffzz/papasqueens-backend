@@ -4,6 +4,7 @@ import base64
 
 dynamo = boto3.resource("dynamodb")
 table = dynamo.Table(os.environ["KITCHEN_TABLE"])
+orders_table = dynamo.Table(os.environ["ORDERS_TABLE"])
 eb = boto3.client("events")
 
 def handler(event, context):
@@ -36,6 +37,16 @@ def handler(event, context):
             ExpressionAttributeNames={"#s": "status"},
             ExpressionAttributeValues={":s": "listo_para_entrega", ":et": now, ":by": staff_id or "unknown", ":u": now}
         )
+
+        try:
+            orders_table.update_item(
+                Key={"tenant_id": tenant_id, "id_order": order_id},
+                UpdateExpression="SET #s = :s, updated_at = :u",
+                ExpressionAttributeNames={"#s": "status"},
+                ExpressionAttributeValues={":s": "listo_para_entrega", ":u": now}
+            )
+        except Exception:
+            pass
 
         resp = table.get_item(Key={"tenant_id": tenant_id, "order_id": order_id})
         pedido = resp.get("Item", {})

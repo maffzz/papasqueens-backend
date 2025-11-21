@@ -19,8 +19,11 @@ def handler(event, context):
             "direccion": detail.get("direccion", "por_definir"),
             "tiempo_salida": None,
             "tiempo_llegada": None,
-            "status": "asignado",
-            "tenant_id": tenant_id
+            # Estado inicial: listo para que alguien de delivery lo tome/asigne
+            "status": "listo_para_entrega",
+            "tenant_id": tenant_id,
+            "created_at": now,
+            "updated_at": now,
         }
 
         delivery_table.put_item(Item=item)

@@ -4,6 +4,7 @@ from botocore.exceptions import ClientError
 
 dynamo = boto3.resource("dynamodb")
 delivery_table = dynamo.Table(os.environ["DELIVERY_TABLE"])
+orders_table = dynamo.Table(os.environ["ORDERS_TABLE"])
 staff_table = dynamo.Table(os.environ["STAFF_TABLE"])
 eb = boto3.client("events")
 
@@ -71,6 +72,20 @@ def handler(event, context):
                 ":u": now,
             },
         )
+
+        # También actualizamos la orden principal a 'en_camino' para que el cliente vea el avance
+        try:
+            order_id = d_item.get("id_order") or id_order
+            if order_id:
+                orders_table.update_item(
+                    Key={"tenant_id": tenant_id, "id_order": order_id},
+                    UpdateExpression="SET #s = :s, updated_at = :u",
+                    ExpressionAttributeNames={"#s": "status"},
+                    ExpressionAttributeValues={":s": "en_camino", ":u": now},
+                )
+        except Exception:
+            # No rompemos todo el flujo si por alguna razón no se puede actualizar la orden
+            pass
 
         eb.put_events(
             Entries=[

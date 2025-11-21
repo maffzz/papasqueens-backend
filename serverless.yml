@@ -1030,3 +1030,19 @@ functions:
               - Authorization
     environment:
       USERS_TABLE: ${self:provider.environment.USERS_TABLE}
+
+  # HEALTHCHECK
+  health:
+    handler: health/health.handler
+    package:
+      include:
+        - ./**
+    events:
+      - http:
+          path: health
+          method: get
+          cors:
+            origins:
+              - "*"
+            headers:
+              - Content-Type

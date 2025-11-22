@@ -121,14 +121,10 @@ def upload_staff_doc(event, context):
 
         body = json.loads(event.get("body", "{}"))
         id_staff = body["id_staff"]
-        tenant_id = body["tenant_id"]
-        file_data = body["file_data"]
-        ext = body.get("ext", "jpg")
-        
-        file_bytes = base64.b64decode(file_data)
-        key = f"{tenant_id}/{id_staff}/profile.{ext}"
-        s3.put_object(Bucket=os.environ.get("STAFF_BUCKET"), Key=key, Body=file_bytes, ContentType=f"image/{ext}")
-        profile_url = f"https://{os.environ.get('STAFF_BUCKET')}.s3.amazonaws.com/{key}"
+        # tenant_id ya no es necesario para S3, pero se mantiene por compatibilidad del payload
+        tenant_id = body.get("tenant_id")
+        # Ahora esperamos opcionalmente una URL ya generada desde el frontend u otro servicio
+        profile_url = body.get("profile_url")
 
         table.update_item(
             Key={"id_staff": id_staff},

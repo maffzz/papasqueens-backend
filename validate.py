@@ -306,7 +306,7 @@ def validate_tables(config):
     
     required_tables = [
         'OrdersTable', 'KitchenTable', 'DeliveryTable', 'AnalyticsTable',
-        'StaffTable', 'MenuItemsTable', 'ProductsTable', 'UsersTable', 'SucursalTable'
+        'StaffTable', 'MenuItemsTable', 'ProductsTable', 'UsersTable'
     ]
     
     missing_tables = []
@@ -369,8 +369,7 @@ def validate_environment_variables(config):
     required_vars = [
         'EVENT_BUS', 'ORDERS_TABLE', 'KITCHEN_TABLE', 'DELIVERY_TABLE',
         'ANALYTICS_TABLE', 'STAFF_TABLE', 'MENU_TABLE', 'PRODUCTS_TABLE',
-        'USERS_TABLE', 'MENU_BUCKET', 'RECEIPTS_BUCKET', 'STAFF_BUCKET',
-        'ANALYTICS_BUCKET'
+        'USERS_TABLE', 'MENU_BUCKET', 'RECEIPTS_BUCKET', 'ANALYTICS_BUCKET'
     ]
     
     missing_vars = []

@@ -24,7 +24,6 @@ provider:
     USERS_TABLE: papasqueens-users
     MENU_BUCKET: papasqueens-menu-images
     RECEIPTS_BUCKET: papasqueens-orders-receipts
-    STAFF_BUCKET: papasqueens-staff-docs
     ANALYTICS_BUCKET: papasqueens-analytics-exports
     JWT_SECRET: ${env:JWT_SECRET, 'change-me'}
 
@@ -199,11 +198,6 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: papasqueens-orders-receipts
-
-    StaffDocsBucket:
-      Type: AWS::S3::Bucket
-      Properties:
-        BucketName: papasqueens-staff-docs
 
     AnalyticsExportsBucket:
       Type: AWS::S3::Bucket

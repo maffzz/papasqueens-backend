@@ -46,11 +46,6 @@ Campos:
 * name (String): Nombre.
 * status (String): Activo o inactivo.
 
-Tabla: Sucursal. Contiene la información de las sucursales multi-tenant.
-Campos:
-* tenant_id (String): Identificador único.
-* distrito (String): Nombre del distrito o zona.
-
 TABLAS EN ANALYTICS-SVC
 Tabla: Analytics. Centraliza las métricas de desempeño.
 Campos:
@@ -334,12 +329,7 @@ Ruta ejemplo: /papasqueens-orders-receipts/{tenant_id}/{id_order}/receipt_{uuid}
 Contenido típico: id_order, id_delivery, tenant_id, customer_name, total_paid (PEN), lista de items con nombre y cantidad, delivered_at.
 Relacionado con: Tablas Orders (orders-svc) y Delivery (delivery-svc), función confirmDelivered.
 
-                                                                                                               3. Bucket: papasqueens-staff-docs
-Guarda documentos o imágenes de perfil del personal.
-Ruta ejemplo: /papasqueens-staff-docs/{tenant_id}/{id_staff}/profile.jpg
-Relacionado con: Tabla Staff (kitchen-svc)
-
-                                                                                                               4. Bucket: papasqueens-analytics-exports
+                                                                                                               3. Bucket: papasqueens-analytics-exports
 Guarda reportes o backups de métricas consolidadas.
 Ruta ejemplo: /papasqueens-analytics-exports/{tenant_id}/{fecha}/metrics.json
 Relacionado con: Tabla Analytics (analytics-svc)
@@ -385,13 +375,13 @@ Resultado: el pedido pasa de “en_preparacion” a “listo_para_entrega”.
 Asigna un repartidor disponible al pedido recién preparado y crea un registro en la tabla Delivery.
 Lambda utilizada: assignDelivery.
 Servicios usados: DynamoDB (Delivery), DynamoDB (Staff), EventBridge.
-Resultado: pedido asignado a un repartidor, estado “asignado”.
+Resultado: pedido asignado a un repartidor, estado “asignado/en_camino”.
 
                                                                                                                   6. WaitForDelivered (delivery-svc):
 Espera mediante temporizador a que la entrega se confirme externamente (no suscribe eventos en esta versión de la state machine).
-Lambdas relacionadas en el flujo externo: confirmDelivered (emite Order.Delivered y genera recibo en S3) y getDeliveryStatus (consulta de seguimiento).
+Lambdas relacionadas en el flujo externo: handoffOrder + updateDeliveryStatus (cambian a “en_camino”) y confirmDelivered (emite Order.Delivered, genera recibo en S3 y actualiza Orders/Delivery a “entregado”).
 Servicios usados: DynamoDB (Delivery), DynamoDB (Orders), S3 (papasqueens-orders-receipts), EventBridge.
-Resultado: entrega confirmada, recibo JSON almacenado en S3, evento Order.Delivered enviado.
+Resultado: entrega confirmada por delivery-svc, recibo JSON almacenado en S3, evento Order.Delivered enviado.
 
                                                                                                                   7. UpdateAnalytics (analytics-svc):
 Registra métricas de tiempos y estado final del pedido en la tabla Analytics.
@@ -399,11 +389,16 @@ Lambdas utilizadas: collectDeliveryMetrics (consume Order.Delivered) y collectOr
 Servicios usados: DynamoDB (Analytics), EventBridge.
 Resultado: métricas actualizadas con tiempos de preparación y entrega.
 
-                                                                                                                  8. CloseOrder (orders-svc):
-Cierra el pedido en la tabla Orders, cambiando su estado a “entregado”.
-Lambda utilizada: handleOrderDelivered (consume Order.Delivered).
+                                                                                                                  8. WaitForConfirmations (orders-svc):
+La state machine llama a la Lambda checkOrderConfirmations (orders-svc) para revisar si staff_confirmed_delivered y customer_confirmed_delivered ya son true en la tabla Orders.
+Si ambos flags NO están en true (done=false), la state machine entra en un estado de espera (WaitMoreForConfirmations, ~5 minutos) y luego vuelve a invocar checkOrderConfirmations.
+Si ambos flags están en true (done=true), continúa al estado CloseOrder.
+
+                                                                                                                  9. CloseOrder (orders-svc):
+Cierra el pedido en la tabla Orders, dejando su estado final en “entregado” de forma definitiva.
+Lambda utilizada: handleOrderDelivered (consume Order.Delivered o es invocada por Step Functions al final del flujo).
 Servicios usados: DynamoDB (Orders).
-Resultado: pedido finalizado correctamente y visible como completado en la app del cliente.
+Resultado: pedido finalizado correctamente, flags de confirmación completados y visible como completado en la app del cliente.
 
 CONECTIVIDAD ENTRE MICROSERVICIOS Y FRONTENDS
 

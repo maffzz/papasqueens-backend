@@ -132,7 +132,6 @@ Si la VM también actúa como estación de despliegue a AWS:
   - `Analytics` – métricas agregadas.
   - `Staff` – personal y repartidores.
   - `MenuItems` – productos del menú.
-  - `Sucursals` – sucursales / locales físicos.
   - `papasqueens-users` – usuarios (clientes) para login y perfil.
 - **S3 Buckets** 🪣
   - `papasqueens-menu-images` – imágenes de productos del menú.

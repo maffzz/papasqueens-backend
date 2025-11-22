@@ -26,7 +26,27 @@ def handler(event, context):
         delivery = resp.get("Item")
         if not delivery:
             return {"statusCode": 404, "headers": cors_headers, "body": json.dumps({"error": "Entrega no encontrada"})}
-        last_location = delivery.get("last_location", {"lat": None, "lon": None})
-        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(last_location)}
+
+        last_location = delivery.get("last_location")
+
+        # Si no hay ubicación registrada o las coordenadas no son numéricas,
+        # devolvemos un objeto vacío de puntos para que el frontend muestre "sin datos".
+        if not last_location:
+            return {"statusCode": 200, "headers": cors_headers, "body": json.dumps({"points": []})}
+
+        lat = last_location.get("lat")
+        lon = last_location.get("lon")
+        try:
+            lat_val = float(lat)
+            lon_val = float(lon)
+        except (TypeError, ValueError):
+            return {"statusCode": 200, "headers": cors_headers, "body": json.dumps({"points": []})}
+
+        clean_location = {
+            "lat": lat_val,
+            "lon": lon_val,
+            "timestamp": last_location.get("timestamp"),
+        }
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(clean_location)}
     except ClientError as e:
         return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

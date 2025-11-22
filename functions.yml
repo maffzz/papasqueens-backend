@@ -1,5 +1,763 @@
-${file(orders-svc/functions.yml)}
-${file(kitchen-svc/functions.yml)}
-${file(delivery-svc/functions.yml)}
-${file(analytics-svc/functions.yml)}
-${file(register/functions.yml)}
+# microservicio orders
+
+createOrder:
+  handler: orders-svc/create_order.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: orders
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+getOrder:
+  handler: orders-svc/get_order.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: orders/{id_order}
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+getOrderStatus:
+  handler: orders-svc/get_order_status.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: orders/{id_order}/status
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+getCustomerOrders:
+  handler: orders-svc/get_customer_orders.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: orders/customer/{id_customer}
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+updateOrderStatus:
+  handler: orders-svc/update_order_status.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: orders/{id_order}/status
+        method: patch
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+cancelOrder:
+  handler: orders-svc/cancel_order.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: orders/{id_order}/cancel
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+handleOrderDelivered:
+  handler: orders-svc/handle_order_delivered.handler
+  package:
+    include:
+      - ./**
+  events:
+    - eventBridge:
+        eventBus: papasqueens-event-bus
+        pattern:
+          detail-type: ["Order.Delivered"]
+
+updateCustomerProfile:
+  handler: orders-svc/update_customer_profile.handler
+  timeout: 29
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: auth/customer/profile
+        method: patch
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+  environment:
+    USERS_TABLE: ${self:provider.environment.USERS_TABLE}
+
+# microservicio kitchen
+
+receiveOrder:
+  handler: kitchen-svc/receive_order.handler
+  package:
+    include:
+      - ./**
+  events:
+    - eventBridge:
+        eventBus: papasqueens-event-bus
+        pattern:
+          detail-type: ["Order.Created"]
+
+getKitchenQueue:
+  handler: kitchen-svc/get_kitchen_queue.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: kitchen/queue
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+acceptOrder:
+  handler: kitchen-svc/accept_order.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: kitchen/orders/{order_id}/accept
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+packOrder:
+  handler: kitchen-svc/pack_order.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: kitchen/orders/{order_id}/pack
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+listMenuItems:
+  handler: kitchen-svc/list_menu_items.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: menu
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+addMenuItem:
+  handler: kitchen-svc/add_menu_item.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: menu
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+updateMenuItem:
+  handler: kitchen-svc/update_menu_item.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: menu/{id_producto}
+        method: patch
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+deleteMenuItem:
+  handler: kitchen-svc/delete_menu_item.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: menu/{id_producto}
+        method: delete
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+manageStaff:
+  handler: kitchen-svc/manage_staff.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: staff
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+    - http:
+        path: staff/{id_staff}
+        method: patch
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+listStaff:
+  handler: kitchen-svc/list_staff.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: staff
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+syncKitchenMetrics:
+  handler: kitchen-svc/sync_kitchen_metrics.handler
+  package:
+    include:
+      - ./**
+  events:
+    - eventBridge:
+        eventBus: papasqueens-event-bus
+        pattern:
+          detail-type: ["Order.Prepared"]
+
+# microservicio delivery
+
+receivePreparedOrder:
+  handler: delivery-svc/receive_prepared_order.handler
+  package:
+    include:
+      - ./**
+  events:
+    - eventBridge:
+        eventBus: papasqueens-event-bus
+        pattern:
+          detail-type: ["Order.Prepared"]
+
+assignDelivery:
+  handler: delivery-svc/assign_delivery.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: delivery/assign
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+updateDeliveryStatus:
+  handler: delivery-svc/update_delivery_status.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: delivery/{id_delivery}/status
+        method: patch
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+handoffOrder:
+  handler: delivery-svc/handoff_order.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: delivery/orders/{id_order}/handoff
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+confirmDelivered:
+  handler: delivery-svc/confirm_delivered.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: delivery/orders/{id_order}/delivered
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+getDeliveryStatus:
+  handler: delivery-svc/get_delivery_status.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: delivery/{id_delivery}
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+trackRider:
+  handler: delivery-svc/track_rider.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: delivery/{id_delivery}/track
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+listDeliveries:
+  handler: delivery-svc/list_deliveries.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: delivery
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+listRiders:
+  handler: delivery-svc/list_riders.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: riders
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+updateRiderStatus:
+  handler: delivery-svc/update_rider_status.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: riders/{id_staff}/status
+        method: patch
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+updateRiderLocation:
+  handler: delivery-svc/update_rider_location.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: delivery/location
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+deliveryMetrics:
+  handler: delivery-svc/delivery_metrics.handler
+  package:
+    include:
+      - ./**
+  events:
+    - eventBridge:
+        eventBus: papasqueens-event-bus
+        pattern:
+          detail-type: ["Order.Delivered"]
+
+# microservicio analytics
+
+collectOrderMetrics:
+  handler: analytics-svc/collect_order_metrics.handler
+  events:
+    - eventBridge:
+        eventBus: papasqueens-event-bus
+        pattern:
+          detail-type: ["Order.Created"]
+
+collectKitchenMetrics:
+  handler: analytics-svc/collect_kitchen_metrics.handler
+  events:
+    - eventBridge:
+        eventBus: papasqueens-event-bus
+        pattern:
+          detail-type: ["Order.Prepared"]
+
+collectDeliveryMetrics:
+  handler: analytics-svc/collect_delivery_metrics.handler
+  events:
+    - eventBridge:
+        eventBus: papasqueens-event-bus
+        pattern:
+          detail-type: ["Order.Delivered"]
+
+collectStaffMetrics:
+  handler: analytics-svc/collect_staff_metrics.handler
+  events:
+    - eventBridge:
+        eventBus: papasqueens-event-bus
+        pattern:
+          detail-type: ["Staff.Updated"]
+
+getAnalyticsOrders:
+  handler: analytics-svc/get_analytics_orders.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: analytics/orders
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+getAnalyticsEmployees:
+  handler: analytics-svc/get_analytics_employees.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: analytics/employees
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+getAnalyticsDelivery:
+  handler: analytics-svc/get_analytics_delivery.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: analytics/delivery
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+getDashboard:
+  handler: analytics-svc/get_dashboard.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: analytics/dashboard
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+getWorkflowKpis:
+  handler: analytics-svc/get_workflow_kpis.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: analytics/workflow-kpis
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+exportAnalyticsReport:
+  handler: analytics-svc/export_analytics_report.handler
+  events:
+    - schedule: rate(1 day)
+
+# microservicio register
+
+staffLogin:
+  handler: register/staff_login.handler
+  timeout: 29
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: auth/staff/login
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+  environment:
+    STAFF_TABLE: ${self:provider.environment.STAFF_TABLE}
+
+customerLogin:
+  handler: register/customer_login.handler
+  timeout: 29
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: auth/customer/login
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+  environment:
+    USERS_TABLE: ${self:provider.environment.USERS_TABLE}
+
+health:
+  handler: health/health.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: health
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type

@@ -45,6 +45,7 @@ def handler(event, context):
         list_id_products = body["list_id_products"]
         items = body.get("items") or []
         delivery_address = body.get("delivery_address") or body.get("address") or body.get("direccion")
+        customer_name = body.get("customer_name") or body.get("name")
 
         if not list_id_products:
             log_error("Intento de crear pedido sin productos", None, event, context, {"id_customer": id_customer})
@@ -81,6 +82,8 @@ def handler(event, context):
         }
         if delivery_address:
             item["delivery_address"] = delivery_address
+        if customer_name:
+            item["customer_name"] = customer_name
         if items:
             normalized_items = []
             for it in items:

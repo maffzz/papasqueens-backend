@@ -3,6 +3,7 @@ from botocore.exceptions import ClientError
 
 dynamo = boto3.resource("dynamodb")
 delivery_table = dynamo.Table(os.environ["DELIVERY_TABLE"])
+orders_table = dynamo.Table(os.environ["ORDERS_TABLE"])
 
 def handler(event, context):
     try:
@@ -12,14 +13,23 @@ def handler(event, context):
         id_delivery = str(uuid.uuid4())
         now = datetime.datetime.utcnow().isoformat()
 
+        try:
+            order_resp = orders_table.get_item(Key={"tenant_id": tenant_id, "id_order": order_id})
+            order_item = order_resp.get("Item", {})
+        except ClientError:
+            order_item = {}
+
+        direccion = order_item.get("delivery_address") or order_item.get("address") or order_item.get("direccion") or detail.get("direccion") or "por_definir"
+        customer_name = order_item.get("customer_name")
+
         item = {
             "id_delivery": id_delivery,
             "id_order": order_id,
             "id_staff": None,
-            "direccion": detail.get("direccion", "por_definir"),
+            "direccion": direccion,
+            "customer_name": customer_name,
             "tiempo_salida": None,
             "tiempo_llegada": None,
-            # Estado inicial: listo para que alguien de delivery lo tome/asigne
             "status": "listo_para_entrega",
             "tenant_id": tenant_id,
             "created_at": now,

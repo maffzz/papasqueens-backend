@@ -1,0 +1,5 @@
+${file(orders-svc/functions.yml)}
+${file(kitchen-svc/functions.yml)}
+${file(delivery-svc/functions.yml)}
+${file(analytics-svc/functions.yml)}
+${file(register/functions.yml)}

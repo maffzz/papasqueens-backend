@@ -1,0 +1,204 @@
+receiveOrder:
+  handler: kitchen-svc/receive_order.handler
+  package:
+    include:
+      - ./**
+  events:
+    - eventBridge:
+        eventBus: papasqueens-event-bus
+        pattern:
+          detail-type: ["Order.Created"]
+
+getKitchenQueue:
+  handler: kitchen-svc/get_kitchen_queue.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: kitchen/queue
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+acceptOrder:
+  handler: kitchen-svc/accept_order.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: kitchen/orders/{order_id}/accept
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+packOrder:
+  handler: kitchen-svc/pack_order.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: kitchen/orders/{order_id}/pack
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+listMenuItems:
+  handler: kitchen-svc/list_menu_items.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: menu
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+addMenuItem:
+  handler: kitchen-svc/add_menu_item.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: menu
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+updateMenuItem:
+  handler: kitchen-svc/update_menu_item.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: menu/{id_producto}
+        method: patch
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+deleteMenuItem:
+  handler: kitchen-svc/delete_menu_item.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: menu/{id_producto}
+        method: delete
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+manageStaff:
+  handler: kitchen-svc/manage_staff.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: staff
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+    - http:
+        path: staff/{id_staff}
+        method: patch
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+listStaff:
+  handler: kitchen-svc/list_staff.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: staff
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+syncKitchenMetrics:
+  handler: kitchen-svc/sync_kitchen_metrics.handler
+  package:
+    include:
+      - ./**
+  events:
+    - eventBridge:
+        eventBus: papasqueens-event-bus
+        pattern:
+          detail-type: ["Order.Prepared"]

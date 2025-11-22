@@ -1,0 +1,131 @@
+collectOrderMetrics:
+  handler: analytics-svc/collect_order_metrics.handler
+  events:
+    - eventBridge:
+        eventBus: papasqueens-event-bus
+        pattern:
+          detail-type: ["Order.Created"]
+
+collectKitchenMetrics:
+  handler: analytics-svc/collect_kitchen_metrics.handler
+  events:
+    - eventBridge:
+        eventBus: papasqueens-event-bus
+        pattern:
+          detail-type: ["Order.Prepared"]
+
+collectDeliveryMetrics:
+  handler: analytics-svc/collect_delivery_metrics.handler
+  events:
+    - eventBridge:
+        eventBus: papasqueens-event-bus
+        pattern:
+          detail-type: ["Order.Delivered"]
+
+collectStaffMetrics:
+  handler: analytics-svc/collect_staff_metrics.handler
+  events:
+    - eventBridge:
+        eventBus: papasqueens-event-bus
+        pattern:
+          detail-type: ["Staff.Updated"]
+
+getAnalyticsOrders:
+  handler: analytics-svc/get_analytics_orders.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: analytics/orders
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+getAnalyticsEmployees:
+  handler: analytics-svc/get_analytics_employees.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: analytics/employees
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+getAnalyticsDelivery:
+  handler: analytics-svc/get_analytics_delivery.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: analytics/delivery
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+getDashboard:
+  handler: analytics-svc/get_dashboard.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: analytics/dashboard
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+getWorkflowKpis:
+  handler: analytics-svc/get_workflow_kpis.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: analytics/workflow-kpis
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+exportAnalyticsReport:
+  handler: analytics-svc/export_analytics_report.handler
+  events:
+    - schedule: rate(1 day)

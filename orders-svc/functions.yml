@@ -1,0 +1,146 @@
+createOrder:
+  handler: orders-svc/create_order.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: orders
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+getOrder:
+  handler: orders-svc/get_order.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: orders/{id_order}
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+getOrderStatus:
+  handler: orders-svc/get_order_status.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: orders/{id_order}/status
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+getCustomerOrders:
+  handler: orders-svc/get_customer_orders.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: orders/customer/{id_customer}
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+updateOrderStatus:
+  handler: orders-svc/update_order_status.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: orders/{id_order}/status
+        method: patch
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+cancelOrder:
+  handler: orders-svc/cancel_order.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: orders/{id_order}/cancel
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+handleOrderDelivered:
+  handler: orders-svc/handle_order_delivered.handler
+  package:
+    include:
+      - ./**
+  events:
+    - eventBridge:
+        eventBus: papasqueens-event-bus
+        pattern:
+          detail-type: ["Order.Delivered"]
+
+updateCustomerProfile:
+  handler: orders-svc/update_customer_profile.handler
+  timeout: 29
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: auth/customer/profile
+        method: patch
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+  environment:
+    USERS_TABLE: ${self:provider.environment.USERS_TABLE}

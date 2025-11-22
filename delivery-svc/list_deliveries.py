@@ -1,10 +1,25 @@
 import json, os
 import boto3
+from decimal import Decimal
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
 
 dynamo = boto3.resource("dynamodb")
 table = dynamo.Table(os.environ["DELIVERY_TABLE"])
+
+
+def to_serializable(obj):
+    """Convierte Decimals y estructuras anidadas a tipos JSON-serializables."""
+    if isinstance(obj, Decimal):
+        try:
+            return float(obj)
+        except Exception:
+            return int(obj)
+    if isinstance(obj, dict):
+        return {k: to_serializable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple, set)):
+        return [to_serializable(v) for v in obj]
+    return obj
 
 
 def handler(event, context):
@@ -44,7 +59,12 @@ def handler(event, context):
         return {
             "statusCode": 200,
             "headers": cors_headers,
-            "body": json.dumps(result),
+            "body": json.dumps(to_serializable(result)),
         }
-    except ClientError as e:
-        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}
+    except (ClientError, Exception) as e:
+        # Cualquier error aquí debe seguir devolviendo cabeceras CORS para que el front pueda verlo
+        return {
+            "statusCode": 500,
+            "headers": cors_headers,
+            "body": json.dumps({"error": str(e)}),
+        }

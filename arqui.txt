@@ -68,12 +68,17 @@ Tabla: Orders. Registra los pedidos generados por los clientes.
 Campos:
 * id_order (String): Identificador único del pedido.
 * tenant_id (String): Sucursal o franquicia.
-* id_customer (String): ID del cliente (temporal, sin autenticación).
+* id_customer (String): ID del cliente autenticado.
 * list_id_products (List): Lista de IDs de productos seleccionados.
+* items (List<Map>): Lista detallada de productos del pedido. Cada item incluye: id_producto, nombre, precio, qty.
+* delivery_address (String): Dirección de entrega final usada por delivery-svc.
+* customer_name (String): Nombre del cliente al momento de crear el pedido.
+* dest_lat (Number): Latitud de destino (geo de la casa del cliente, proveniente del perfil).
+* dest_lng (Number): Longitud de destino.
 * status (String): Estado general del pedido ("recibido", "en_preparacion", "listo_para_entrega", "en_camino", "entregado", "cancelado").
 * created_at (Timestamp): Fecha de creación.
 * updated_at (Timestamp): Última actualización.
-Nota: Orders-svc consulta el catálogo de productos desde la tabla MenuItems del kitchen-svc; no mantiene un catálogo propio.
+Nota: Orders-svc consulta el catálogo de productos desde la tabla MenuItems del kitchen-svc; no mantiene un catálogo propio. Además, es la fuente de verdad de la lista de productos pedidos (campo items), que luego se usa para métricas y recibos.
 
 TABLAS EN DELIVERY-SVC
 Tabla: Delivery. Registra la información del proceso de entrega de pedidos.
@@ -81,11 +86,17 @@ Campos:
 * id_delivery (String): Identificador único de la entrega.
 * id_order (String): Pedido asociado.
 * id_staff (String): Repartidor asignado.
-* direccion (String): Dirección de entrega.
+* direccion (String): Dirección de entrega (copiada desde Orders.delivery_address o desde el evento Order.Prepared).
+* customer_name (String): Nombre del cliente (copiado desde Orders.customer_name).
+* dest_lat (Number): Latitud de destino (copiada desde Orders.dest_lat).
+* dest_lng (Number): Longitud de destino (copiada desde Orders.dest_lng).
 * tiempo_salida (Timestamp): Hora de salida.
 * tiempo_llegada (Timestamp): Hora de llegada.
-* status (String): Estado (“asignado”, “en_camino”, “entregado”).
+* status (String): Estado ("listo_para_entrega", "asignado", "en_camino", "entregado").
+* receipt_url (String): URL pública del recibo JSON almacenado en S3 (papasqueens-orders-receipts).
 * tenant_id (String): Sucursal o franquicia.
+* created_at (Timestamp): Fecha de creación del registro de delivery.
+* updated_at (Timestamp): Última actualización.
 
 LAMBDA
 MICROSERVICIO: ORDERS-SVC
@@ -208,9 +219,10 @@ Funciones Lambda:
                                                                   * Recursos usados: DynamoDB (Delivery), EventBridge (Order.EnRoute).
 
                                                                      5. confirmDelivered
-                                                                     * Descripción: confirma la entrega final, guarda prueba en S3 y emite Order.Delivered.
+                                                                     * Descripción: confirma la entrega final, genera un recibo JSON en S3 con el detalle del pedido y emite el evento Order.Delivered.
+                                                                     * Detalle del recibo: id_order, id_delivery, tenant_id, customer_name, total_paid, currency, items (id_producto, nombre, precio, qty), delivered_at.
                                                                      * Disparador: HTTP POST /delivery/orders/{id_order}/delivered.
-                                                                     * Recursos usados: DynamoDB (Delivery), S3 (papasqueens-delivery-proof), EventBridge.
+                                                                     * Recursos usados: DynamoDB (Delivery), DynamoDB (Orders), S3 (papasqueens-orders-receipts), EventBridge.
 
                                                                         6. getDeliveryStatus
                                                                         * Descripción: devuelve el estado actual de una entrega.
@@ -296,22 +308,18 @@ Contiene las imágenes de los productos del menú.
 Ruta ejemplo: /papasqueens-menu-images/{tenant_id}/{id_producto}.jpg
 Relacionado con: Tabla MenuItems (kitchen-svc)
 
-                                                                                                               2. Bucket: papasqueens-delivery-proof
-Contiene fotografías o firmas de las entregas.
-Ruta ejemplo: /papasqueens-delivery-proof/{tenant_id}/{id_order}/proof.jpg
-Relacionado con: Tabla Delivery (delivery-svc)
+                                                                                                               2. Bucket: papasqueens-orders-receipts
+Guarda comprobantes o recibos de pedidos completados en formato JSON (generados al confirmar la entrega).
+Ruta ejemplo: /papasqueens-orders-receipts/{tenant_id}/{id_order}/receipt_{uuid}.json
+Contenido típico: id_order, id_delivery, tenant_id, customer_name, total_paid (PEN), lista de items con nombre y cantidad, delivered_at.
+Relacionado con: Tablas Orders (orders-svc) y Delivery (delivery-svc), función confirmDelivered.
 
-                                                                                                               3. Bucket: papasqueens-orders-receipts
-Guarda comprobantes o recibos de pedidos completados.
-Ruta ejemplo: /papasqueens-orders-receipts/{tenant_id}/{id_order}/receipt.pdf
-Relacionado con: Tabla Orders (orders-svc)
-
-                                                                                                               4. Bucket: papasqueens-staff-docs
+                                                                                                               3. Bucket: papasqueens-staff-docs
 Guarda documentos o imágenes de perfil del personal.
 Ruta ejemplo: /papasqueens-staff-docs/{tenant_id}/{id_staff}/profile.jpg
 Relacionado con: Tabla Staff (kitchen-svc)
 
-                                                                                                               5. Bucket: papasqueens-analytics-exports
+                                                                                                               4. Bucket: papasqueens-analytics-exports
 Guarda reportes o backups de métricas consolidadas.
 Ruta ejemplo: /papasqueens-analytics-exports/{tenant_id}/{fecha}/metrics.json
 Relacionado con: Tabla Analytics (analytics-svc)
@@ -361,9 +369,9 @@ Resultado: pedido asignado a un repartidor, estado “asignado”.
 
                                                                                                                   6. WaitForDelivered (delivery-svc):
 Espera mediante temporizador a que la entrega se confirme externamente (no suscribe eventos en esta versión de la state machine).
-Lambdas relacionadas en el flujo externo: confirmDelivered (emite Order.Delivered) y getDeliveryStatus (consulta de seguimiento).
-Servicios usados: DynamoDB (Delivery), S3 (papasqueens-delivery-proof), EventBridge.
-Resultado: entrega confirmada, prueba almacenada en S3, evento Order.Delivered enviado.
+Lambdas relacionadas en el flujo externo: confirmDelivered (emite Order.Delivered y genera recibo en S3) y getDeliveryStatus (consulta de seguimiento).
+Servicios usados: DynamoDB (Delivery), DynamoDB (Orders), S3 (papasqueens-orders-receipts), EventBridge.
+Resultado: entrega confirmada, recibo JSON almacenado en S3, evento Order.Delivered enviado.
 
                                                                                                                   7. UpdateAnalytics (analytics-svc):
 Registra métricas de tiempos y estado final del pedido en la tabla Analytics.
@@ -376,6 +384,76 @@ Cierra el pedido en la tabla Orders, cambiando su estado a “entregado”.
 Lambda utilizada: handleOrderDelivered (consume Order.Delivered).
 Servicios usados: DynamoDB (Orders).
 Resultado: pedido finalizado correctamente y visible como completado en la app del cliente.
+
+CONECTIVIDAD ENTRE MICROSERVICIOS Y FRONTENDS
+
+Frontends principales:
+* Frontend cliente (React, carpeta frontend/customer):
+  - Usa API Gateway para:
+    · Crear pedidos: POST /orders (orders-svc/createOrder).
+    · Consultar pedido individual y tracking: GET /orders/{id_order} (orders-svc/getOrder).
+    · Listar pedidos activos del cliente: GET /orders/customer/{id_customer} (orders-svc/getCustomerOrders).
+    · Autenticación y perfil: /auth/customer/login, /auth/customer/profile (register/auth-svc + orders-svc/update_customer_profile).
+    · Menú: GET /menu (kitchen-svc/listMenuItems).
+
+* Frontend staff (React, carpeta frontend/staff):
+  - Dashboard y cocina:
+    · GET /kitchen/queue, /kitchen/... (kitchen-svc) para ver y mover pedidos en cocina.
+  - Gestión de delivery:
+    · GET /delivery?tenant_id=... (delivery-svc/list_deliveries) para ver entregas activas.
+    · POST /delivery/assign (delivery-svc/assign_delivery) para asignar repartidores.
+    · POST /delivery/location (delivery-svc/update_rider_location) para actualizar ubicación.
+    · GET /delivery/{id_delivery}/track (delivery-svc/trackRider) para ver el recorrido y calcular ETA.
+    · POST /delivery/orders/{id_order}/handoff y /delivered (delivery-svc/handoffOrder, confirmDelivered).
+    · GET /riders y PATCH /riders/{id_staff}/status (delivery-svc/list_riders, update_rider_status).
+  - Analytics admin:
+    · GET /analytics/orders, /analytics/employees, /analytics/delivery, /analytics/dashboard (analytics-svc).
+
+Flujos clave de eventos:
+1) Cliente crea pedido (createOrder, orders-svc)
+   - Guarda pedido en Orders (con items, dirección, nombre, dest_lat/dest_lng).
+   - Publica Order.Created en EventBridge.
+   - Step Functions opcionalmente orquesta el workflow.
+
+2) Kitchen recibe pedido (receive_prepared_order / receiveOrder, kitchen-svc)
+   - Escucha Order.Created.
+   - Inserta registro en Kitchen y lo muestra en el panel de cocina.
+
+3) Kitchen marca pedido como listo (packOrder, kitchen-svc)
+   - Cambia estado en Kitchen a "listo_para_entrega".
+   - Publica Order.Prepared en EventBridge.
+
+4) Delivery crea registro de entrega (receive_prepared_order, delivery-svc)
+   - Escucha Order.Prepared.
+   - Crea registro en Delivery con id_order, tenant_id, direccion, customer_name, dest_lat/dest_lng.
+   - El panel de staff muestra estas entregas como "listo_para_entrega".
+
+5) Staff asigna repartidor (assign_delivery, delivery-svc)
+   - Vía POST /delivery/assign desde frontend staff.
+   - Valida que el rider no tenga otra entrega activa.
+   - Marca el registro de Delivery con id_staff y status "asignado".
+
+6) Salida a reparto (handoffOrder + update_delivery_status, delivery-svc)
+   - staff marca salida / cambia status a "en_camino".
+   - Se emite Order.EnRoute (si aplica) hacia analytics.
+
+7) Confirmación de entrega (confirmDelivered, delivery-svc)
+   - Vía POST /delivery/orders/{id_order}/delivered.
+   - Actualiza Delivery (status "entregado", tiempo_llegada, delivered_by, receipt_url).
+   - Actualiza Orders (status "entregado").
+   - Genera recibo JSON en S3 (papasqueens-orders-receipts) con nombre del cliente, total pagado y detalle de productos.
+   - Publica Order.Delivered hacia orders-svc y analytics-svc.
+
+8) Analytics recopila métricas (analytics-svc)
+   - collectOrderMetrics escucha Order.Created.
+   - collectKitchenMetrics escucha Order.Prepared.
+   - collectDeliveryMetrics escucha Order.Delivered.
+   - getAnalytics* expone vistas agregadas para el panel de admin.
+
+9) Customer tracking
+   - El frontend cliente consulta GET /orders/{id_order} para ver:
+     · Detalle del pedido (items, total).
+     · Estado actual (workflow + history construido desde Kitchen y Delivery).
 
 CLOUDWATCH LOGS Y OBSERVABILIDAD
 Configuración de logging y monitoreo para todas las funciones Lambda.

@@ -1,4 +1,4 @@
-import json, boto3, os, datetime, base64, uuid
+import json, boto3, os, datetime, uuid
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Attr, Key
 
@@ -22,7 +22,6 @@ def handler(event, context):
         body = json.loads(event.get("body", "{}"))
         headers = event.get("headers", {}) or {}
         qs = event.get("queryStringParameters") or {}
-        proof_data = body.get("proof_data")
         tenant_id = body.get("tenant_id") or headers.get("X-Tenant-Id") or headers.get("x-tenant-id") or qs.get("tenant_id") or "default"
         staff_id = body.get("id_staff") or headers.get("X-User-Id") or headers.get("x-user-id")
 
@@ -37,23 +36,62 @@ def handler(event, context):
         delivery = items[0]
         id_delivery = delivery["id_delivery"]
         now = datetime.datetime.utcnow().isoformat()
-        proof_url = None
 
-        if proof_data:
-            image_bytes = base64.b64decode(proof_data)
-            key = f"{tenant_id}/{id_order}/proof_{uuid.uuid4()}.jpg"
-            s3.put_object(Bucket=os.environ["PROOF_BUCKET"], Key=key, Body=image_bytes, ContentType="image/jpeg")
-            proof_url = f"https://{os.environ['PROOF_BUCKET']}.s3.amazonaws.com/{key}"
+        # Construir un recibo simple de la orden
+        receipt_url = None
+        try:
+            order_resp = orders_table.get_item(Key={"tenant_id": tenant_id, "id_order": id_order})
+            order_item = order_resp.get("Item", {}) or {}
+
+            customer_name = order_item.get("customer_name") or order_item.get("name")
+            items_list = order_item.get("items") or []
+
+            total = 0.0
+            sanitized_items = []
+            for it in items_list:
+                if not isinstance(it, dict):
+                    continue
+                precio = it.get("precio") or it.get("price") or 0
+                qty = it.get("qty") or 1
+                try:
+                    total += float(precio) * float(qty)
+                except Exception:
+                    pass
+                sanitized_items.append({
+                    "id_producto": it.get("id_producto") or it.get("id") or it.get("sku"),
+                    "nombre": it.get("nombre") or it.get("name"),
+                    "precio": float(precio) if isinstance(precio, (int, float)) else float(str(precio)) if precio is not None else 0.0,
+                    "qty": qty,
+                })
+
+            receipt = {
+                "id_order": id_order,
+                "id_delivery": id_delivery,
+                "tenant_id": tenant_id,
+                "customer_name": customer_name,
+                "total_paid": round(total, 2),
+                "currency": "PEN",
+                "items": sanitized_items,
+                "delivered_at": now,
+            }
+
+            bucket = os.environ["RECEIPTS_BUCKET"]
+            key = f"{tenant_id}/{id_order}/receipt_{uuid.uuid4()}.json"
+            s3.put_object(Bucket=bucket, Key=key, Body=json.dumps(receipt, default=str), ContentType="application/json")
+            receipt_url = f"https://{bucket}.s3.amazonaws.com/{key}"
+        except Exception:
+            # Si falla la generación del recibo, no bloqueamos la confirmación de entrega
+            receipt_url = None
 
         delivery_table.update_item(
             Key={"tenant_id": tenant_id, "id_delivery": id_delivery},
-            UpdateExpression="SET #s=:s, tiempo_llegada=:t, delivered_by=:by, proof_url=:p, updated_at=:u",
+            UpdateExpression="SET #s=:s, tiempo_llegada=:t, delivered_by=:by, receipt_url=:r, updated_at=:u",
             ExpressionAttributeNames={"#s": "status"},
             ExpressionAttributeValues={
                 ":s": "entregado",
                 ":t": now,
                 ":by": staff_id or delivery.get("id_staff", "unknown"),
-                ":p": proof_url,
+                ":r": receipt_url,
                 ":u": now,
             },
         )
@@ -75,11 +113,11 @@ def handler(event, context):
                 {
                     "Source": "delivery-svc",
                     "DetailType": "Order.Delivered",
-                    "Detail": json.dumps({"tenant_id": tenant_id, "id_order": id_order, "id_delivery": id_delivery, "proof_url": proof_url}),
+                    "Detail": json.dumps({"tenant_id": tenant_id, "id_order": id_order, "id_delivery": id_delivery, "receipt_url": receipt_url}),
                     "EventBusName": os.environ["EVENT_BUS"]
                 }
             ]
         )
-        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps({"message": "Entrega confirmada", "proof_url": proof_url})}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps({"message": "Entrega confirmada", "receipt_url": receipt_url})}
     except ClientError as e:
         return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

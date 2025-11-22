@@ -21,7 +21,6 @@ provider:
     ANALYTICS_TABLE: Analytics
     STAFF_TABLE: Staff
     MENU_TABLE: MenuItems
-    SUCURSAL_TABLE: Sucursals
     USERS_TABLE: papasqueens-users
     MENU_BUCKET: papasqueens-menu-images
     PROOF_BUCKET: papasqueens-delivery-proof
@@ -216,22 +215,6 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: papasqueens-analytics-exports
-
-    SucursalTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: Sucursals
-        BillingMode: PAY_PER_REQUEST
-        AttributeDefinitions:
-          - AttributeName: tenant_id
-            AttributeType: S
-          - AttributeName: id_sucursal
-            AttributeType: S
-        KeySchema:
-          - AttributeName: tenant_id
-            KeyType: HASH
-          - AttributeName: id_sucursal
-            KeyType: RANGE
 
     # EVENTBRIDGE BUS
 

@@ -1,4 +1,7 @@
-import json, boto3, os, datetime
+import json
+import boto3
+import os
+import datetime
 from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
 
@@ -7,6 +10,7 @@ delivery_table = dynamo.Table(os.environ["DELIVERY_TABLE"])
 orders_table = dynamo.Table(os.environ["ORDERS_TABLE"])
 staff_table = dynamo.Table(os.environ["STAFF_TABLE"])
 eb = boto3.client("events")
+
 
 def handler(event, context):
     headers_in = event.get("headers", {}) or {}
@@ -21,43 +25,89 @@ def handler(event, context):
         body = json.loads(event.get("body", "{}"))
         headers = event.get("headers", {}) or {}
         qs = event.get("queryStringParameters") or {}
+
         id_delivery = body.get("id_delivery")
         id_order = body.get("id_order")
-        tenant_id = body.get("tenant_id") or headers.get("X-Tenant-Id") or headers.get("x-tenant-id") or qs.get("tenant_id") or "default"
+        tenant_id = (
+            body.get("tenant_id")
+            or headers.get("X-Tenant-Id")
+            or headers.get("x-tenant-id")
+            or qs.get("tenant_id")
+            or "default"
+        )
         chosen_staff = body.get("id_staff")
 
         # Resolver id_delivery a partir de id_order si no llega directamente, usando GSI OrderIndex
         if not id_delivery and id_order:
             resp = delivery_table.query(
                 IndexName="OrderIndex",
-                KeyConditionExpression=Key("id_order").eq(id_order)
+                KeyConditionExpression=Key("id_order").eq(id_order),
             )
             items = [x for x in resp.get("Items", []) if x.get("tenant_id") == tenant_id]
             if not items:
-                return {"statusCode": 404, "headers": cors_headers, "body": json.dumps({"error": "Entrega no encontrada para el pedido"})}
+                return {
+                    "statusCode": 404,
+                    "headers": cors_headers,
+                    "body": json.dumps({"error": "Entrega no encontrada para el pedido"}),
+                }
             id_delivery = items[0]["id_delivery"]
 
         if not id_delivery:
-            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "Falta id_delivery o id_order"})}
+            return {
+                "statusCode": 400,
+                "headers": cors_headers,
+                "body": json.dumps({"error": "Falta id_delivery o id_order"}),
+            }
 
         # Validar/Seleccionar repartidor con rol delivery
         if chosen_staff:
-            st = staff_table.get_item(Key={"tenant_id": tenant_id, "id_staff": chosen_staff}).get("Item") or {}
+            st_resp = staff_table.get_item(Key={"tenant_id": tenant_id, "id_staff": chosen_staff})
+            st = st_resp.get("Item") or {}
             if (not st) or (st.get("status") != "activo") or (st.get("role") != "delivery"):
-                return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "id_staff inválido: requiere rol 'delivery' activo y tenant válido"})}
+                return {
+                    "statusCode": 400,
+                    "headers": cors_headers,
+                    "body": json.dumps({"error": "id_staff inválido: requiere rol 'delivery' activo y tenant válido"}),
+                }
         else:
             staff_resp = staff_table.scan(
-                FilterExpression=Attr("tenant_id").eq(tenant_id) & Attr("role").eq("delivery") & Attr("status").eq("activo")
+                FilterExpression=Attr("tenant_id").eq(tenant_id)
+                & Attr("role").eq("delivery")
+                & Attr("status").eq("activo")
             )
             riders = staff_resp.get("Items", [])
             if not riders:
-                return {"statusCode": 404, "headers": cors_headers, "body": json.dumps({"error": "No hay repartidores disponibles"})}
+                return {
+                    "statusCode": 404,
+                    "headers": cors_headers,
+                    "body": json.dumps({"error": "No hay repartidores disponibles"}),
+                }
             chosen_staff = riders[0]["id_staff"]
 
         # Validar tenant del delivery
-        d_item = delivery_table.get_item(Key={"tenant_id": tenant_id, "id_delivery": id_delivery}).get("Item")
+        d_resp = delivery_table.get_item(Key={"tenant_id": tenant_id, "id_delivery": id_delivery})
+        d_item = d_resp.get("Item")
         if not d_item:
-            return {"statusCode": 404, "headers": cors_headers, "body": json.dumps({"error": "Entrega no encontrada para el tenant"})}
+            return {
+                "statusCode": 404,
+                "headers": cors_headers,
+                "body": json.dumps({"error": "Entrega no encontrada para el tenant"}),
+            }
+
+        # Verificar si el repartidor ya tiene alguna entrega activa (no entregada)
+        active_resp = delivery_table.scan(
+            FilterExpression=
+                Attr("tenant_id").eq(tenant_id)
+                & Attr("id_staff").eq(chosen_staff)
+                & Attr("status").ne("delivered")
+                & Attr("status").ne("entregado"),
+        )
+        if active_resp.get("Items"):
+            return {
+                "statusCode": 400,
+                "headers": cors_headers,
+                "body": json.dumps({"error": "El repartidor ya tiene una entrega activa (está ocupado)"}),
+            }
 
         now = datetime.datetime.utcnow().isoformat()
 
@@ -87,20 +137,47 @@ def handler(event, context):
             # No rompemos todo el flujo si por alguna razón no se puede actualizar la orden
             pass
 
+        # Incluir siempre id_order en el evento si existe, para facilitar métricas
+        event_detail = {
+            "tenant_id": tenant_id,
+            "id_delivery": id_delivery,
+            "id_staff": chosen_staff,
+        }
+        if order_id:
+            event_detail["id_order"] = order_id
+
         eb.put_events(
             Entries=[
                 {
                     "Source": "delivery-svc",
                     "DetailType": "Order.Assigned",
-                    "Detail": json.dumps({"tenant_id": tenant_id, "id_delivery": id_delivery, "id_staff": chosen_staff}),
-                    "EventBusName": os.environ["EVENT_BUS"]
+                    "Detail": json.dumps(event_detail),
+                    "EventBusName": os.environ["EVENT_BUS"],
                 }
             ]
         )
 
-        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps({"message": "Repartidor asignado", "id_staff": chosen_staff, "id_delivery": id_delivery})}
+        return {
+            "statusCode": 200,
+            "headers": cors_headers,
+            "body": json.dumps(
+                {
+                    "message": "Repartidor asignado",
+                    "id_staff": chosen_staff,
+                    "id_delivery": id_delivery,
+                }
+            ),
+        }
 
     except KeyError as e:
-        return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": f"Campo faltante: {e}"})}
+        return {
+            "statusCode": 400,
+            "headers": cors_headers,
+            "body": json.dumps({"error": f"Campo faltante: {e}"}),
+        }
     except ClientError as e:
-        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}
+        return {
+            "statusCode": 500,
+            "headers": cors_headers,
+            "body": json.dumps({"error": str(e)}),
+        }

@@ -369,7 +369,7 @@ def validate_environment_variables(config):
     required_vars = [
         'EVENT_BUS', 'ORDERS_TABLE', 'KITCHEN_TABLE', 'DELIVERY_TABLE',
         'ANALYTICS_TABLE', 'STAFF_TABLE', 'MENU_TABLE', 'PRODUCTS_TABLE',
-        'USERS_TABLE', 'SUCURSAL_TABLE', 'MENU_BUCKET', 'PROOF_BUCKET',
+        'USERS_TABLE', 'MENU_BUCKET', 'PROOF_BUCKET',
         'RECEIPTS_BUCKET', 'STAFF_BUCKET', 'ANALYTICS_BUCKET'
     ]
     

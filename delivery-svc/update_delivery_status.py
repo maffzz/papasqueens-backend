@@ -42,11 +42,11 @@ def handler(event, context):
         )
 
         event_type = "Order.EnRoute" if new_status == "en_camino" else "Order.Delivered" if new_status == "entregado" else "Delivery.Updated"
-        
-        if event_type == "Order.Delivered" and id_order:
-            event_detail = {"tenant_id": tenant_id, "id_order": id_order, "id_delivery": id_delivery, "status": new_status}
-        else:
-            event_detail = {"tenant_id": tenant_id, "id_delivery": id_delivery, "status": new_status}
+
+        # Siempre que exista id_order, incluirlo en el detalle del evento
+        event_detail = {"tenant_id": tenant_id, "id_delivery": id_delivery, "status": new_status}
+        if id_order:
+            event_detail["id_order"] = id_order
 
         eb.put_events(
             Entries=[

@@ -9,7 +9,10 @@ delivery_table = dynamo.Table(os.environ["DELIVERY_TABLE"])
 def handler(event, context):
     try:
         detail = event.get("detail", {})
-        order_id = detail["id_order"]
+        # Algunos eventos pueden venir sin id_order; intentar leerlo de forma segura
+        order_id = detail.get("id_order") or detail.get("order_id")
+        if not order_id:
+            return {"statusCode": 400, "body": json.dumps({"error": "Evento sin id_order para métricas de delivery"})}
 
         resp = delivery_table.scan(FilterExpression=Attr("id_order").eq(order_id))
         if not resp.get("Items"):

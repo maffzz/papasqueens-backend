@@ -21,6 +21,8 @@ def handler(event, context):
 
         direccion = order_item.get("delivery_address") or order_item.get("address") or order_item.get("direccion") or detail.get("direccion") or "por_definir"
         customer_name = order_item.get("customer_name")
+        dest_lat = order_item.get("dest_lat")
+        dest_lng = order_item.get("dest_lng")
 
         item = {
             "id_delivery": id_delivery,
@@ -35,6 +37,10 @@ def handler(event, context):
             "created_at": now,
             "updated_at": now,
         }
+
+        if dest_lat is not None and dest_lng is not None:
+            item["dest_lat"] = dest_lat
+            item["dest_lng"] = dest_lng
 
         delivery_table.put_item(Item=item)
         return {"statusCode": 200, "body": json.dumps({"message": "Entrega creada", "id_delivery": id_delivery})}

@@ -46,6 +46,8 @@ def handler(event, context):
         name = body.get("name")
         address = body.get("address") or body.get("direccion")
         phone = body.get("phone")
+        lat = body.get("lat")
+        lng = body.get("lng")
 
         update_expr_parts = []
         expr_attr_names = {}
@@ -61,6 +63,12 @@ def handler(event, context):
         if phone is not None:
             update_expr_parts.append("phone = :phone")
             expr_attr_values[":phone"] = phone
+        if lat is not None:
+            update_expr_parts.append("lat = :lat")
+            expr_attr_values[":lat"] = lat
+        if lng is not None:
+            update_expr_parts.append("lng = :lng")
+            expr_attr_values[":lng"] = lng
 
         if not update_expr_parts:
             return {
@@ -91,6 +99,8 @@ def handler(event, context):
             "name": updated.get("name"),
             "address": updated.get("address"),
             "phone": updated.get("phone"),
+            "lat": updated.get("lat"),
+            "lng": updated.get("lng"),
             "status": updated.get("status"),
         }
 

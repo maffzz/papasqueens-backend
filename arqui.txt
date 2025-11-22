@@ -75,6 +75,8 @@ Campos:
 * customer_name (String): Nombre del cliente al momento de crear el pedido.
 * dest_lat (Number): Latitud de destino (geo de la casa del cliente, proveniente del perfil).
 * dest_lng (Number): Longitud de destino.
+* staff_confirmed_delivered (Boolean): Indica si un usuario de tipo staff confirmó que el pedido llegó al cliente.
+* customer_confirmed_delivered (Boolean): Indica si el propio cliente confirmó que su pedido llegó correctamente.
 * status (String): Estado general del pedido ("recibido", "en_preparacion", "listo_para_entrega", "en_camino", "entregado", "cancelado").
 * created_at (Timestamp): Fecha de creación.
 * updated_at (Timestamp): Última actualización.
@@ -136,6 +138,24 @@ Funciones Lambda:
                   * Descripción: escucha el evento Order.Delivered y actualiza el estado del pedido a "entregado".
                   * Disparador: evento Order.Delivered (EventBridge).
                   * Recursos usados: DynamoDB (Orders).
+
+                 8. confirmOrderStaff
+                  * Descripción: endpoint para que el personal de staff confirme que el pedido fue entregado al cliente.
+                  * Disparador: HTTP POST /orders/{id_order}/staff-confirm-delivered.
+                  * Reglas: requiere X-User-Type=staff y tenant_id en header.
+                  * Efecto: actualiza staff_confirmed_delivered = true en la tabla Orders.
+
+                 9. confirmOrderCustomer
+                  * Descripción: endpoint para que el cliente confirme explícitamente que su pedido llegó correctamente.
+                  * Disparador: HTTP POST /orders/{id_order}/customer-confirm-delivered.
+                  * Reglas: requiere X-User-Type=customer y que id_customer del pedido coincida con X-User-Id.
+                  * Efecto: actualiza customer_confirmed_delivered = true en la tabla Orders.
+
+                 10. checkOrderConfirmations
+                  * Descripción: Lambda usada por Step Functions para revisar si tanto staff como cliente ya han confirmado la entrega.
+                  * Disparador: llamada directa desde la state machine papasqueens-order-workflow.
+                  * Input: { tenant_id, id_order }.
+                  * Output: { staff_confirmed, customer_confirmed, done } donde done=true solo si ambos flags son true.
 
 MICROSERVICIO: KITCHEN-SVC
 Responsabilidad: manejar el flujo interno de la cocina y la administración del personal y del menú.

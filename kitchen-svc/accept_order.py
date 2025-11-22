@@ -67,6 +67,28 @@ def handler(event, context):
             ]
         )
 
+        # Iniciar Step Functions (best-effort) cuando cocina acepta el pedido
+        try:
+            sfn = boto3.client("stepfunctions")
+            sfn_arn = os.environ.get("ORDER_SFN_ARN")
+            if not sfn_arn:
+                target_name = os.environ.get("ORDER_SFN_NAME", "papasqueens-order-workflow")
+                paginator = sfn.get_paginator("list_state_machines")
+                for page in paginator.paginate():
+                    for sm in page.get("stateMachines", []):
+                        if sm.get("name") == target_name:
+                            sfn_arn = sm.get("stateMachineArn")
+                            break
+                    if sfn_arn:
+                        break
+
+            if sfn_arn:
+                sfn_input = {"id_order": order_id, "tenant_id": tenant_id}
+                sfn.start_execution(stateMachineArn=sfn_arn, input=json.dumps(sfn_input))
+        except Exception:
+            # No romper flujo de cocina si falla Step Functions
+            pass
+
         return {"statusCode": 200, "headers": cors_headers, "body": json.dumps({"message": "Pedido en preparación", "order_id": order_id})}
 
     except KeyError as e:

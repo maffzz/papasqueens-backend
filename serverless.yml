@@ -24,7 +24,7 @@ provider:
     USERS_TABLE: papasqueens-users
     MENU_BUCKET: papasqueens-menu-images
     RECEIPTS_BUCKET: papasqueens-orders-receipts
-    ANALYTICS_BUCKET: papasqueens-analytics-exports
+    ANALYTICS_BUCKET: papasqueens-analytics-export
     JWT_SECRET: ${env:JWT_SECRET, 'change-me'}
 
   iamRoleStatements:
@@ -202,7 +202,7 @@ resources:
     AnalyticsExportsBucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: papasqueens-analytics-exports
+        BucketName: papasqueens-analytics-export
 
     # EVENTBRIDGE BUS
 

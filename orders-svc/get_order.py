@@ -1,6 +1,6 @@
 import json, os, boto3
 from decimal import Decimal
-from boto3.dynamodb.conditions import Attr
+from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 from common.jwt_utils import verify_jwt
 
@@ -128,7 +128,7 @@ def handler(event, context):
         try:
             d_query = delivery_table.query(
                 IndexName="OrderIndex",
-                KeyConditionExpression=Attr("id_order").eq(order_id)
+                KeyConditionExpression=Key("id_order").eq(order_id)
             )
             d_items = [x for x in d_query.get("Items", []) if x.get("tenant_id") == tenant_id]
             d = d_items[0] if d_items else {}

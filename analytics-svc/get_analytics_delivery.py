@@ -29,7 +29,23 @@ def handler(event, context):
         tiempos = []
         for i in items:
             zona = i.get("direccion", "desconocida").split(",")[-1].strip()
-            tiempos.append((datetime.datetime.fromisoformat(i["tiempo_llegada"]) - datetime.datetime.fromisoformat(i["tiempo_salida"])).total_seconds()/60)
+
+            inicio_raw = i.get("tiempo_salida")
+            fin_raw = i.get("tiempo_llegada")
+
+            # Saltar registros sin ambos tiempos válidos
+            if not isinstance(inicio_raw, str) or not isinstance(fin_raw, str):
+                continue
+
+            try:
+                inicio = datetime.datetime.fromisoformat(inicio_raw)
+                fin = datetime.datetime.fromisoformat(fin_raw)
+            except Exception:
+                # Si el formato no es ISO válido, omitimos este registro
+                continue
+
+            dur_min = (fin - inicio).total_seconds() / 60.0
+            tiempos.append(dur_min)
             zonas[zona] = zonas.get(zona, 0) + 1
 
         promedio_tiempo = statistics.mean(tiempos) if tiempos else 0

@@ -7,9 +7,9 @@ provider:
   region: us-east-1
   memorySize: 1024
   timeout: 29
-  cfnRole: arn:aws:iam::039871617247:role/LabRole
+  cfnRole: arn:aws:iam::839486973866:role/LabRole
   iam:
-    role: arn:aws:iam::039871617247:role/LabRole
+    role: arn:aws:iam::839486973866:role/LabRole
   logs:
     frameworkLambda: true
   environment:
@@ -211,7 +211,7 @@ resources:
       Type: AWS::StepFunctions::StateMachine
       Properties:
         StateMachineName: papasqueens-order-workflow
-        RoleArn: arn:aws:iam::039871617247:role/LabRole
+        RoleArn: arn:aws:iam::839486973866:role/LabRole
         DefinitionString:
           Fn::Sub:
             - |

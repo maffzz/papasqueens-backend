@@ -7,6 +7,20 @@ dynamo = boto3.resource("dynamodb")
 users_table = dynamo.Table(os.environ["USERS_TABLE"])
 
 
+def to_serializable(obj):
+    """Convierte Decimals y estructuras anidadas a tipos JSON-serializables."""
+    if isinstance(obj, Decimal):
+        try:
+            return float(obj)
+        except Exception:
+            return int(obj)
+    if isinstance(obj, dict):
+        return {k: to_serializable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple, set)):
+        return [to_serializable(v) for v in obj]
+    return obj
+
+
 def get_tenant_and_email(event):
     headers = event.get("headers", {}) or {}
     tenant_id = headers.get("X-Tenant-Id") or headers.get("x-tenant-id")
@@ -114,7 +128,7 @@ def handler(event, context):
             "status": updated.get("status"),
         }
 
-        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(payload)}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps(to_serializable(payload))}
 
     except ClientError as e:
         return {

@@ -1,4 +1,5 @@
 import json, os, boto3
+from decimal import Decimal
 from botocore.exceptions import ClientError
 
 
@@ -64,11 +65,20 @@ def handler(event, context):
             update_expr_parts.append("phone = :phone")
             expr_attr_values[":phone"] = phone
         if lat is not None:
-            update_expr_parts.append("lat = :lat")
-            expr_attr_values[":lat"] = lat
+            try:
+                lat_dec = Decimal(str(lat))
+                update_expr_parts.append("lat = :lat")
+                expr_attr_values[":lat"] = lat_dec
+            except Exception:
+                # Si no se puede convertir, no romper la actualización completa
+                pass
         if lng is not None:
-            update_expr_parts.append("lng = :lng")
-            expr_attr_values[":lng"] = lng
+            try:
+                lng_dec = Decimal(str(lng))
+                update_expr_parts.append("lng = :lng")
+                expr_attr_values[":lng"] = lng_dec
+            except Exception:
+                pass
 
         if not update_expr_parts:
             return {

@@ -253,7 +253,29 @@ resources:
                   "UpdateAnalytics": {
                     "Type": "Task",
                     "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ServiceName}-${Stage}-collectDeliveryMetrics",
-                    "Next": "CloseOrder"
+                    "Next": "WaitForConfirmations"
+                  },
+                  "WaitForConfirmations": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ServiceName}-${Stage}-checkOrderConfirmations",
+                    "ResultPath": "$.confirmResult",
+                    "Next": "CheckConfirmationsChoice"
+                  },
+                  "CheckConfirmationsChoice": {
+                    "Type": "Choice",
+                    "Choices": [
+                      {
+                        "Variable": "$.confirmResult.done",
+                        "BooleanEquals": true,
+                        "Next": "CloseOrder"
+                      }
+                    ],
+                    "Default": "WaitMoreForConfirmations"
+                  },
+                  "WaitMoreForConfirmations": {
+                    "Type": "Wait",
+                    "Seconds": 300,
+                    "Next": "WaitForConfirmations"
                   },
                   "CloseOrder": {
                     "Type": "Task",

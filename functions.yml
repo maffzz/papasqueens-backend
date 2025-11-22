@@ -147,6 +147,60 @@ updateCustomerProfile:
   environment:
     USERS_TABLE: ${self:provider.environment.USERS_TABLE}
 
+validateConfig:
+  handler: validate.handler
+
+confirmOrderStaff:
+  handler: orders-svc/confirm_order_staff.handler
+  events:
+    - http:
+        path: orders/{id_order}/staff-confirm-delivered
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+confirmOrderCustomer:
+  handler: orders-svc/confirm_order_customer.handler
+  events:
+    - http:
+        path: orders/{id_order}/customer-confirm-delivered
+        method: post
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
+checkOrderConfirmations:
+  handler: orders-svc/check_order_confirmations.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: orders/{id_order}/confirmations
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - Authorization
+
 # microservicio kitchen
 
 receiveOrder:

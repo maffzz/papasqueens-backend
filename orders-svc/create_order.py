@@ -81,6 +81,8 @@ def handler(event, context):
             "status": "recibido",
             "created_at": now,
             "updated_at": now,
+            "staff_confirmed_delivered": False,
+            "customer_confirmed_delivered": False,
         }
         if delivery_address:
             item["delivery_address"] = delivery_address

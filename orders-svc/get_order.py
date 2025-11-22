@@ -142,6 +142,14 @@ def handler(event, context):
             if d.get("tiempo_llegada"):
                 history.append({"step": "entregado", "at": d.get("tiempo_llegada"), "by": d.get("delivered_by")})
 
+        # Confirmación del cliente (si existe)
+        if item.get("customer_confirmed_at"):
+            history.append({
+                "step": "confirmado_cliente",
+                "at": item.get("customer_confirmed_at"),
+                "by": item.get("id_customer"),
+            })
+
         payload = dict(item)
         payload["workflow"] = {"kitchen": k, "delivery": d}
         payload["history"] = history

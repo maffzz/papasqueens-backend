@@ -62,8 +62,8 @@ def handler(event, context):
         now = datetime.datetime.utcnow().isoformat()
         orders_table.update_item(
             Key={"tenant_id": tenant_id, "id_order": order_id},
-            UpdateExpression="SET customer_confirmed_delivered = :v, updated_at = :u",
-            ExpressionAttributeValues={":v": True, ":u": now},
+            UpdateExpression="SET customer_confirmed_delivered = :v, customer_confirmed_at = :c, updated_at = :u",
+            ExpressionAttributeValues={":v": True, ":c": now, ":u": now},
         )
 
         return {

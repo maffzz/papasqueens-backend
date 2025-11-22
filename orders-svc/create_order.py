@@ -37,9 +37,21 @@ def handler(event, context):
 
     try:
         log_info("Iniciando creación de pedido", event, context)
-        
+
+        if not event.get("body") and event.get("tenant_id") and event.get("id_order"):
+            return {
+                "tenant_id": event.get("tenant_id"),
+                "id_order": event.get("id_order"),
+                "validated": True,
+            }
+
         user_info = get_user_info(event)
-        body = json.loads(event.get("body", "{}"))
+        body_raw = event.get("body", "{}")
+        if isinstance(body_raw, str):
+            body = json.loads(body_raw or "{}")
+        else:
+            body = body_raw or {}
+
         tenant_id = body["tenant_id"]
         id_customer = body["id_customer"]
         list_id_products = body["list_id_products"]

@@ -8,11 +8,25 @@ delivery_table = dynamo.Table(os.environ["DELIVERY_TABLE"])
 
 def handler(event, context):
     try:
-        detail = event.get("detail", {})
-        # Algunos eventos pueden venir sin id_order; intentar leerlo de forma segura
-        order_id = detail.get("id_order") or detail.get("order_id")
+        detail = event.get("detail", {}) or {}
+
+        # Soportar tanto eventos de EventBridge (con detail) como llamadas directas de Step Functions
+        order_id = (
+            detail.get("id_order")
+            or detail.get("order_id")
+            or event.get("id_order")
+            or event.get("order_id")
+        )
+        tenant_id = (
+            detail.get("tenant_id")
+            or event.get("tenant_id")
+        )
+
         if not order_id:
-            return {"statusCode": 400, "body": json.dumps({"error": "Evento sin id_order para métricas de delivery"})}
+            return {
+                "statusCode": 400,
+                "body": json.dumps({"error": "Evento sin id_order para métricas de delivery"}),
+            }
 
         resp = delivery_table.scan(FilterExpression=Attr("id_order").eq(order_id))
         if not resp.get("Items"):
@@ -20,7 +34,12 @@ def handler(event, context):
         delivery = resp["Items"][0]
 
         if not delivery.get("tiempo_salida") or not delivery.get("tiempo_llegada"):
-            return {"statusCode": 400, "body": json.dumps({"error": "Entrega sin tiempos válidos"})}
+            return {
+                "statusCode": 400,
+                "body": json.dumps({"error": "Entrega sin tiempos válidos"}),
+                "tenant_id": tenant_id,
+                "id_order": order_id,
+            }
 
         start = datetime.datetime.fromisoformat(delivery["tiempo_salida"])
         end = datetime.datetime.fromisoformat(delivery["tiempo_llegada"])
@@ -38,12 +57,17 @@ def handler(event, context):
         id_metric = metric["id_metric"]
 
         analytics_table.update_item(
-            Key={"id_metric": id_metric},
+            Key={"tenant_id": tenant_id, "id_metric": id_metric},
             UpdateExpression="SET #s=:s, fin=:f, tiempo_total=:t, id_staff=:st",
             ExpressionAttributeNames={"#s": "status"},
             ExpressionAttributeValues={":s": "entregado", ":f": delivery["tiempo_llegada"], ":t": dur, ":st": delivery.get("id_staff")}
         )
 
-        return {"statusCode": 200, "body": json.dumps({"message": "Métrica de entrega actualizada", "tiempo_entrega": dur})}
+        return {
+            "statusCode": 200,
+            "body": json.dumps({"message": "Métrica de entrega actualizada", "tiempo_entrega": dur}),
+            "tenant_id": tenant_id,
+            "id_order": order_id,
+        }
     except ClientError as e:
         return {"statusCode": 500, "body": json.dumps({"error": str(e)})}

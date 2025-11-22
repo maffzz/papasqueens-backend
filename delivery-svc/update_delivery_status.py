@@ -34,11 +34,26 @@ def handler(event, context):
         id_order = delivery.get("id_order")
         
         now = datetime.datetime.utcnow().isoformat()
+
+        # Construir dinámicamente el update para registrar tiempos de salida/llegada
+        update_expr = "SET #s = :s, status_by = :by, updated_at = :u"
+        expr_attr_names = {"#s": "status"}
+        expr_attr_values = {":s": new_status, ":by": actor or "unknown", ":u": now}
+
+        if new_status == "en_camino":
+            # Marca de salida a reparto
+            update_expr += ", tiempo_salida = :ts"
+            expr_attr_values[":ts"] = now
+        elif new_status == "entregado":
+            # Marca de llegada al cliente
+            update_expr += ", tiempo_llegada = :tl"
+            expr_attr_values[":tl"] = now
+
         delivery_table.update_item(
             Key={"tenant_id": tenant_id, "id_delivery": id_delivery},
-            UpdateExpression="SET #s = :s, status_by = :by, updated_at = :u",
-            ExpressionAttributeNames={"#s": "status"},
-            ExpressionAttributeValues={":s": new_status, ":by": actor or "unknown", ":u": now}
+            UpdateExpression=update_expr,
+            ExpressionAttributeNames=expr_attr_names,
+            ExpressionAttributeValues=expr_attr_values,
         )
 
         event_type = "Order.EnRoute" if new_status == "en_camino" else "Order.Delivered" if new_status == "entregado" else "Delivery.Updated"

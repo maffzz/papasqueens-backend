@@ -22,17 +22,26 @@ def handler(event, context):
     }
 
     try:
-        body = json.loads(event.get("body", "{}"))
+        body_raw = event.get("body")
+        if isinstance(body_raw, str):
+            body = json.loads(body_raw or "{}")
+        elif isinstance(body_raw, dict):
+            body = body_raw
+        else:
+            body = {}
+
         headers = event.get("headers", {}) or {}
         qs = event.get("queryStringParameters") or {}
 
-        id_delivery = body.get("id_delivery")
-        id_order = body.get("id_order")
+        # Soportar tanto HTTP (body) como Step Functions (campos al nivel raíz)
+        id_delivery = body.get("id_delivery") or event.get("id_delivery")
+        id_order = body.get("id_order") or event.get("id_order")
         tenant_id = (
             body.get("tenant_id")
             or headers.get("X-Tenant-Id")
             or headers.get("x-tenant-id")
             or qs.get("tenant_id")
+            or event.get("tenant_id")
             or "default"
         )
         chosen_staff = body.get("id_staff")
@@ -165,8 +174,12 @@ def handler(event, context):
                     "message": "Repartidor asignado",
                     "id_staff": chosen_staff,
                     "id_delivery": id_delivery,
+                    "tenant_id": tenant_id,
+                    "id_order": order_id,
                 }
             ),
+            "tenant_id": tenant_id,
+            "id_order": order_id,
         }
 
     except KeyError as e:

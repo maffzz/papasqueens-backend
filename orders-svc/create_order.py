@@ -90,9 +90,11 @@ def handler(event, context):
             item["customer_name"] = customer_name
         if dest_lat is not None and dest_lng is not None:
             try:
-                item["dest_lat"] = float(dest_lat)
-                item["dest_lng"] = float(dest_lng)
+                # DynamoDB no acepta floats nativos; usamos Decimal para coordenadas
+                item["dest_lat"] = Decimal(str(dest_lat))
+                item["dest_lng"] = Decimal(str(dest_lng))
             except Exception:
+                # Si no se pueden convertir, no rompemos toda la creación del pedido
                 pass
         if items:
             normalized_items = []

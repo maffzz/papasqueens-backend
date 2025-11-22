@@ -2,7 +2,8 @@ import json, boto3, os, datetime
 from botocore.exceptions import ClientError
 
 dynamo = boto3.resource("dynamodb")
-table = dynamo.Table(os.environ["KITCHEN_TABLE"])
+kitchen_table = dynamo.Table(os.environ["KITCHEN_TABLE"])
+orders_table = dynamo.Table(os.environ["ORDERS_TABLE"])
 
 def handler(event, context):
     try:
@@ -12,6 +13,13 @@ def handler(event, context):
         tenant_id = detail["tenant_id"]
         now = datetime.datetime.utcnow().isoformat()
 
+        # Enriquecer con datos del pedido para que cocina vea info del cliente
+        try:
+            order_resp = orders_table.get_item(Key={"tenant_id": tenant_id, "id_order": order_id})
+            order_item = order_resp.get("Item") or {}
+        except Exception:
+            order_item = {}
+
         item = {
             "order_id": order_id,
             "tenant_id": tenant_id,
@@ -19,10 +27,19 @@ def handler(event, context):
             "status": "recibido",
             "start_time": None,
             "end_time": None,
-            "updated_at": now
+            "updated_at": now,
         }
 
-        table.put_item(Item=item)
+        # Copiar algunos campos útiles para la UI de cocina
+        if order_item:
+            if order_item.get("customer_name"):
+                item["customer_name"] = order_item["customer_name"]
+            if order_item.get("delivery_address"):
+                item["delivery_address"] = order_item["delivery_address"]
+            if order_item.get("id_customer"):
+                item["id_customer"] = order_item["id_customer"]
+
+        kitchen_table.put_item(Item=item)
         return {"statusCode": 200, "body": json.dumps({"message": "Pedido recibido en cocina", "order_id": order_id})}
 
     except KeyError as e:

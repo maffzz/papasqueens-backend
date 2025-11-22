@@ -34,9 +34,11 @@ def handler(event, context):
         delivery = resp["Items"][0]
 
         if not delivery.get("tiempo_salida") or not delivery.get("tiempo_llegada"):
+            # Si aún no tenemos tiempos completos, no consideramos esto un error de la
+            # máquina de estados: devolvemos 200 con un warning y dejamos pasar los IDs.
             return {
-                "statusCode": 400,
-                "body": json.dumps({"error": "Entrega sin tiempos válidos"}),
+                "statusCode": 200,
+                "body": json.dumps({"warning": "Entrega sin tiempos válidos"}),
                 "tenant_id": tenant_id,
                 "id_order": order_id,
             }

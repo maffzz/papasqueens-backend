@@ -250,6 +250,7 @@ acceptOrder:
             - X-User-Id
             - X-User-Email
             - X-User-Type
+            - X-User-Role
             - Authorization
 
 packOrder:
@@ -269,6 +270,7 @@ packOrder:
             - X-User-Id
             - X-User-Email
             - X-User-Type
+            - X-User-Role
             - Authorization
 
 listMenuItems:
@@ -407,6 +409,26 @@ syncKitchenMetrics:
         eventBus: papasqueens-event-bus
         pattern:
           detail-type: ["Order.Prepared"]
+
+getDashboardByRole:
+  handler: kitchen-svc/get_dashboard_by_role.handler
+  package:
+    include:
+      - ./**
+  events:
+    - http:
+        path: kitchen/dashboard
+        method: get
+        cors:
+          origins: ['*']
+          headers:
+            - Content-Type
+            - X-Tenant-Id
+            - X-User-Id
+            - X-User-Email
+            - X-User-Type
+            - X-User-Role
+            - Authorization
 
 # microservicio delivery
 

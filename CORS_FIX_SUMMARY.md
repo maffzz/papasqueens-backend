@@ -121,3 +121,37 @@ Se ejecutó validación automática que confirma:
 Todos los endpoints HTTP ahora responden correctamente con headers CORS, permitiendo que los frontends (customer y staff) puedan hacer requests cross-origin sin problemas de CORS.
 
 **Estado**: ✅ COMPLETADO
+
+
+---
+
+## ⚠️ ACTUALIZACIÓN: Error 502 Detectado
+
+### Problema Adicional Encontrado
+
+El error **502 Bad Gateway** con mensaje "No 'Access-Control-Allow-Origin' header" indica que:
+
+1. ✅ **CORS está correctamente implementado** en el código (100% cobertura)
+2. ❌ **Las dependencias Python no se empaquetan** correctamente para Lambda
+3. ❌ **bcrypt requiere compilación nativa** que falla en Lambda
+
+### Solución Inmediata
+
+**Ver archivo `DEPLOYMENT_FIX.md` para instrucciones detalladas.**
+
+Opciones:
+1. Instalar `serverless-python-requirements` plugin
+2. Usar Docker para empaquetar dependencias
+3. Cambiar a `bcrypt-lambda` (más simple)
+4. Usar handler de prueba sin bcrypt
+
+### Handler de Prueba Creado
+
+Se creó `register/test_login.py` para verificar que CORS funciona sin dependencias problemáticas.
+
+### Archivos Adicionales Corregidos
+
+- ✅ `register/staff_login.py` - cors_headers movido antes del try
+- ✅ `register/customer_login.py` - cors_headers movido antes del try
+
+**Estado Final**: CORS 100% implementado, pero requiere configuración de empaquetado de dependencias para despliegue exitoso.

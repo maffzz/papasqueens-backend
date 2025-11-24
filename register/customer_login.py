@@ -21,6 +21,14 @@ def verify_password(password, password_hash):
 
 
 def handler(event, context):
+    headers = event.get('headers', {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers.get("Origin") or headers.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,POST",
+        "Content-Type": "application/json",
+    }
+
     try:
         body = json.loads(event.get('body', '{}'))
         email = body.get('email')
@@ -28,14 +36,7 @@ def handler(event, context):
         name = body.get('name', '')
         address = body.get('address') or body.get('direccion') or ''
         phone = body.get('phone') or ''
-        headers = event.get('headers', {}) or {}
         tenant_id = body.get('tenant_id') or headers.get('X-Tenant-Id') or headers.get('x-tenant-id')
-
-        cors_headers = {
-            "Access-Control-Allow-Origin": headers.get("Origin") or headers.get("origin") or "*",
-            "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
-            "Access-Control-Allow-Methods": "OPTIONS,POST",
-        }
 
         if not email or not password:
             return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "Email y password requeridos"})}

@@ -16,18 +16,19 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def handler(event, context):
+    headers = event.get('headers', {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers.get("Origin") or headers.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,POST",
+        "Content-Type": "application/json",
+    }
+
     try:
         body = json.loads(event.get('body', '{}'))
-        headers = event.get('headers', {}) or {}
         username = body.get('username') or body.get('email')
         password = body.get('password')
         tenant_id = body.get('tenant_id') or headers.get('X-Tenant-Id') or headers.get('x-tenant-id')
-
-        cors_headers = {
-            "Access-Control-Allow-Origin": headers.get("Origin") or headers.get("origin") or "*",
-            "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
-            "Access-Control-Allow-Methods": "OPTIONS,POST",
-        }
 
         if not username or not password:
             return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "Usuario y password requeridos"})}

@@ -5,6 +5,14 @@ dynamo = boto3.resource("dynamodb")
 analytics_table = dynamo.Table(os.environ["ANALYTICS_TABLE"])
 
 def handler(event, context):
+    headers_in = event.get("headers", {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers_in.get("Origin") or headers_in.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,POST",
+        "Content-Type": "application/json",
+    }
+
     try:
         detail = event.get("detail", {})
         staff_id = detail.get("id_staff")
@@ -25,6 +33,6 @@ def handler(event, context):
         }
 
         analytics_table.put_item(Item=metric_item)
-        return {"statusCode": 200, "body": json.dumps({"message": "Métrica de personal actualizada"})}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps({"message": "Métrica de personal actualizada"})}
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

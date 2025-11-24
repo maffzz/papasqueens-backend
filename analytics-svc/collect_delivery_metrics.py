@@ -7,6 +7,14 @@ analytics_table = dynamo.Table(os.environ["ANALYTICS_TABLE"])
 delivery_table = dynamo.Table(os.environ["DELIVERY_TABLE"])
 
 def handler(event, context):
+    headers_in = event.get("headers", {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers_in.get("Origin") or headers_in.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,POST",
+        "Content-Type": "application/json",
+    }
+
     try:
         detail = event.get("detail", {}) or {}
 
@@ -25,12 +33,13 @@ def handler(event, context):
         if not order_id:
             return {
                 "statusCode": 400,
+                "headers": cors_headers,
                 "body": json.dumps({"error": "Evento sin id_order para métricas de delivery"}),
             }
 
         resp = delivery_table.scan(FilterExpression=Attr("id_order").eq(order_id))
         if not resp.get("Items"):
-            return {"statusCode": 404, "body": json.dumps({"error": "Entrega no encontrada"})}
+            return {"statusCode": 404, "headers": cors_headers, "body": json.dumps({"error": "Entrega no encontrada"})}
         delivery = resp["Items"][0]
 
         if not delivery.get("tiempo_salida") or not delivery.get("tiempo_llegada"):
@@ -38,6 +47,7 @@ def handler(event, context):
             # máquina de estados: devolvemos 200 con un warning y dejamos pasar los IDs.
             return {
                 "statusCode": 200,
+                "headers": cors_headers,
                 "body": json.dumps({"warning": "Entrega sin tiempos válidos"}),
                 "tenant_id": tenant_id,
                 "id_order": order_id,
@@ -53,7 +63,7 @@ def handler(event, context):
         )
         
         if not analytics_resp.get("Items"):
-            return {"statusCode": 404, "body": json.dumps({"error": "Métrica no encontrada para este pedido"})}
+            return {"statusCode": 404, "headers": cors_headers, "body": json.dumps({"error": "Métrica no encontrada para este pedido"})}
         
         metric = analytics_resp["Items"][0]
         id_metric = metric["id_metric"]
@@ -67,9 +77,10 @@ def handler(event, context):
 
         return {
             "statusCode": 200,
+            "headers": cors_headers,
             "body": json.dumps({"message": "Métrica de entrega actualizada", "tiempo_entrega": dur}),
             "tenant_id": tenant_id,
             "id_order": order_id,
         }
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

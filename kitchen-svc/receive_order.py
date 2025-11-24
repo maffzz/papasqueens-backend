@@ -6,6 +6,14 @@ kitchen_table = dynamo.Table(os.environ["KITCHEN_TABLE"])
 orders_table = dynamo.Table(os.environ["ORDERS_TABLE"])
 
 def handler(event, context):
+    headers_in = event.get("headers", {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers_in.get("Origin") or headers_in.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,POST",
+        "Content-Type": "application/json",
+    }
+
     try:
         # evento desde EventBridge
         detail = event.get("detail", {})
@@ -40,9 +48,9 @@ def handler(event, context):
                 item["id_customer"] = order_item["id_customer"]
 
         kitchen_table.put_item(Item=item)
-        return {"statusCode": 200, "body": json.dumps({"message": "Pedido recibido en cocina", "order_id": order_id})}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps({"message": "Pedido recibido en cocina", "order_id": order_id})}
 
     except KeyError as e:
-        return {"statusCode": 400, "body": json.dumps({"error": f"Campo faltante en evento: {e}"})}
+        return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": f"Campo faltante en evento: {e}"})}
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

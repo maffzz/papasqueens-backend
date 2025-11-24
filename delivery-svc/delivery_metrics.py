@@ -7,6 +7,14 @@ delivery_table = dynamo.Table(os.environ["DELIVERY_TABLE"])
 eb = boto3.client("events")
 
 def handler(event, context):
+    headers_in = event.get("headers", {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers_in.get("Origin") or headers_in.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,POST",
+        "Content-Type": "application/json",
+    }
+
     try:
         resp = delivery_table.scan(FilterExpression=Attr("status").eq("entregado"))
         metrics = []
@@ -34,6 +42,6 @@ def handler(event, context):
                 ]
             )
 
-        return {"statusCode": 200, "body": json.dumps({"processed": len(metrics)})}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps({"processed": len(metrics)})}
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

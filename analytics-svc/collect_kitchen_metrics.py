@@ -7,17 +7,25 @@ analytics_table = dynamo.Table(os.environ["ANALYTICS_TABLE"])
 kitchen_table = dynamo.Table(os.environ["KITCHEN_TABLE"])
 
 def handler(event, context):
+    headers_in = event.get("headers", {}) or {}
+    cors_headers = {
+        "Access-Control-Allow-Origin": headers_in.get("Origin") or headers_in.get("origin") or "*",
+        "Access-Control-Allow-Headers": "Content-Type,X-Tenant-Id,X-User-Id,X-User-Email,X-User-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,POST",
+        "Content-Type": "application/json",
+    }
+
     try:
         detail = event.get("detail", {})
         order_id = detail["order_id"]
 
         resp = kitchen_table.scan(FilterExpression=Attr("order_id").eq(order_id))
         if not resp.get("Items"):
-            return {"statusCode": 404, "body": json.dumps({"error": "Pedido no encontrado en cocina"})}
+            return {"statusCode": 404, "headers": cors_headers, "body": json.dumps({"error": "Pedido no encontrado en cocina"})}
         kitchen = resp["Items"][0]
 
         if not kitchen.get("start_time") or not kitchen.get("end_time"):
-            return {"statusCode": 400, "body": json.dumps({"error": "Pedido sin tiempos definidos"})}
+            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "Pedido sin tiempos definidos"})}
 
         start = datetime.datetime.fromisoformat(kitchen["start_time"])
         end = datetime.datetime.fromisoformat(kitchen["end_time"])
@@ -29,7 +37,7 @@ def handler(event, context):
         )
         
         if not analytics_resp.get("Items"):
-            return {"statusCode": 404, "body": json.dumps({"error": "Métrica no encontrada para este pedido"})}
+            return {"statusCode": 404, "headers": cors_headers, "body": json.dumps({"error": "Métrica no encontrada para este pedido"})}
         
         metric = analytics_resp["Items"][0]
         id_metric = metric["id_metric"]
@@ -41,7 +49,7 @@ def handler(event, context):
             ExpressionAttributeValues={":s": "listo_para_entrega", ":i": kitchen["start_time"], ":f": kitchen["end_time"], ":t": dur}
         )
 
-        return {"statusCode": 200, "body": json.dumps({"message": "Métrica de cocina actualizada", "tiempo_total": dur})}
+        return {"statusCode": 200, "headers": cors_headers, "body": json.dumps({"message": "Métrica de cocina actualizada", "tiempo_total": dur})}
 
     except ClientError as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {"statusCode": 500, "headers": cors_headers, "body": json.dumps({"error": str(e)})}

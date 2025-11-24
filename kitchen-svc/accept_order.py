@@ -30,9 +30,16 @@ def handler(event, context):
             return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "tenant_id requerido"})}
 
         now = datetime.datetime.utcnow().isoformat()
+        
+        # Validar que el usuario tenga rol de cocinero
+        headers = event.get("headers", {}) or {}
+        user_role = headers.get("X-User-Role") or headers.get("x-user-role")
+        if user_role and user_role not in ["cocinero", "admin"]:
+            return {"statusCode": 403, "headers": cors_headers, "body": json.dumps({"error": "Solo cocineros pueden aceptar pedidos"})}
+        
         table.update_item(
             Key={"tenant_id": tenant_id, "order_id": order_id},
-            UpdateExpression="SET #s = :s, list_id_staff = list_append(if_not_exists(list_id_staff, :empty), :sid), start_time = :st, accepted_by = :by, accepted_at = :st, updated_at = :u",
+            UpdateExpression="SET #s = :s, list_id_staff = list_append(if_not_exists(list_id_staff, :empty), :sid), start_time = :st, accepted_by = :by, accepted_at = :st, updated_at = :u, accepted_by_role = :role",
             ExpressionAttributeNames={"#s": "status"},
             ExpressionAttributeValues={
                 ":s": "en_preparacion",
@@ -41,6 +48,7 @@ def handler(event, context):
                 ":st": now,
                 ":by": staff_id,
                 ":u": now,
+                ":role": "cocinero",
             },
         )
 

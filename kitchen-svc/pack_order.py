@@ -31,11 +31,16 @@ def handler(event, context):
         if not tenant_id:
             return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "tenant_id requerido"})}
 
+        # Validar que el usuario tenga rol de empaquetador
+        user_role = headers.get("X-User-Role") or headers.get("x-user-role")
+        if user_role and user_role not in ["empaquetador", "admin"]:
+            return {"statusCode": 403, "headers": cors_headers, "body": json.dumps({"error": "Solo empaquetadores pueden empacar pedidos"})}
+
         table.update_item(
             Key={"tenant_id": tenant_id, "order_id": order_id},
-            UpdateExpression="SET #s = :s, end_time = :et, packed_at = :et, packed_by = if_not_exists(packed_by, :by), updated_at = :u",
+            UpdateExpression="SET #s = :s, end_time = :et, packed_at = :et, packed_by = if_not_exists(packed_by, :by), updated_at = :u, packed_by_role = :role",
             ExpressionAttributeNames={"#s": "status"},
-            ExpressionAttributeValues={":s": "listo_para_entrega", ":et": now, ":by": staff_id or "unknown", ":u": now}
+            ExpressionAttributeValues={":s": "listo_para_entrega", ":et": now, ":by": staff_id or "unknown", ":u": now, ":role": "empaquetador"}
         )
 
         try:

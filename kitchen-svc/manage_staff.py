@@ -55,8 +55,8 @@ def manage_staff(event, context):
         is_new = existing_staff is None
         
         # validate role
-        if role not in ("staff", "delivery", "admin"):
-            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "Rol inválido"})}
+        if role not in ("cocinero", "empaquetador", "delivery", "admin"):
+            return {"statusCode": 400, "headers": cors_headers, "body": json.dumps({"error": "Rol inválido. Roles válidos: cocinero, empaquetador, delivery, admin"})}
 
         item = {
             "id_staff": id_staff,
